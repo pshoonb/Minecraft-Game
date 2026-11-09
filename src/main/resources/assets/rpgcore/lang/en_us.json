@@ -11,5 +11,6 @@
   "screen.rpgcore.stat.agility": "Agility",
   "screen.rpgcore.stat.constitution": "Constitution",
   "screen.rpgcore.stat.intelligence": "Intelligence",
-  "screen.rpgcore.stat.spirit": "Spirit"
+  "screen.rpgcore.stat.spirit": "Spirit",
+  "button.rpgcore.open_panel": "RPG Attributes"
 }
