@@ -17,8 +17,10 @@ import java.math.BigInteger;
 
 /** Player level, allocated points, and the intended/current effect of each attribute. */
 public final class RpgDataScreen extends Screen {
-    private static final int PANEL_WIDTH = 520;
-    private static final int PANEL_HEIGHT = 448;
+    private static final int PANEL_WIDTH = 410;
+    private static final int PANEL_HEIGHT = 236;
+    private static final int COLUMN_WIDTH = 198;
+    private static final int ROW_HEIGHT = 34;
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
 
     private final Screen parentScreen;
@@ -40,46 +42,49 @@ public final class RpgDataScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
 
-        addText(left + 8, top + 12, PANEL_WIDTH - 16,
+        addText(left + 8, top + 7, PANEL_WIDTH - 16,
                 Component.translatable("screen.rpgcore.title"), 0xFFFFD778, true);
-        addText(left + 12, top + 32, PANEL_WIDTH - 24,
+        addText(left + 8, top + 21, PANEL_WIDTH - 16,
                 Component.translatable("screen.rpgcore.subtitle"), 0xFFD5CBBB, true);
 
-        levelLabel = addText(left + 22, top + 55, 340,
+        levelLabel = addText(left + 12, top + 37, 180,
                 Component.translatable("screen.rpgcore.level", "..."), 0xFFF0E9DC, false);
-        pointsLabel = addText(left + 22, top + 75, 470,
+        pointsLabel = addText(left + 12, top + 50, PANEL_WIDTH - 24,
                 Component.translatable("screen.rpgcore.points", "...", "..."), 0xFFFFD778, false);
-        waitingLabel = addText(left + 22, top + 96, 470,
+        waitingLabel = addText(left + 12, top + 65, PANEL_WIDTH - 24,
                 Component.translatable("screen.rpgcore.waiting"), 0xFFFFD778, false);
 
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             final PlayerAttribute attribute = ATTRIBUTES[i];
-            int rowY = top + 112 + i * 36;
+            int row = i / 2;
+            int column = i % 2;
+            int cellX = left + 7 + column * COLUMN_WIDTH;
+            int rowY = top + 79 + row * ROW_HEIGHT;
 
-            addText(left + 22, rowY + 3, 126,
+            addText(cellX, rowY + 2, 76,
                     Component.translatable("screen.rpgcore.stat." + attribute.serializedName()),
                     0xFFF0E9DC, false);
-            valueLabels[i] = addText(left + 154, rowY + 3, 108,
+            valueLabels[i] = addText(cellX + 76, rowY + 2, 49,
                     Component.translatable("screen.rpgcore.stat.points", "0"),
                     0xFFFFD778, false);
-            effectLabels[i] = addText(left + 22, rowY + 18, 370,
+            effectLabels[i] = addText(cellX, rowY + 17, COLUMN_WIDTH - 8,
                     Component.translatable("screen.rpgcore.effect." + attribute.serializedName()),
                     0xFFB8B0A2, false);
 
             addRenderableWidget(Button.builder(Component.literal("+1"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 1)))
-                    .bounds(left + 414, rowY + 7, 38, 20).build());
+                    .bounds(cellX + 126, rowY, 29, 16).build());
 
             addRenderableWidget(Button.builder(Component.literal("+10"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 10)))
-                    .bounds(left + 456, rowY + 7, 44, 20).build());
+                    .bounds(cellX + 157, rowY, 34, 16).build());
         }
 
         addRenderableWidget(Button.builder(Component.translatable("screen.rpgcore.reset"),
                 button -> PacketDistributor.sendToServer(new ResetAttributesPayload()))
-                .bounds(left + 22, top + 414, 170, 20).build());
+                .bounds(left + 12, top + 215, 140, 16).build());
 
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
@@ -116,9 +121,9 @@ public final class RpgDataScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
         graphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xFF1B1A18);
-        graphics.fill(left, top, left + PANEL_WIDTH, top + 3, 0xFFE0B45C);
-        graphics.fill(left + 5, top + 5, left + PANEL_WIDTH - 5, top + PANEL_HEIGHT - 5, 0xFF3B3022);
-        graphics.fill(left + 7, top + 7, left + PANEL_WIDTH - 7, top + PANEL_HEIGHT - 7, 0xFF171615);
+        graphics.fill(left, top, left + PANEL_WIDTH, top + 2, 0xFFE0B45C);
+        graphics.fill(left + 4, top + 4, left + PANEL_WIDTH - 4, top + PANEL_HEIGHT - 4, 0xFF3B3022);
+        graphics.fill(left + 6, top + 6, left + PANEL_WIDTH - 6, top + PANEL_HEIGHT - 6, 0xFF171615);
 
         boolean hasData = ClientRpgDataCache.hasServerData();
         waitingLabel.visible = !hasData;
