@@ -1,8 +1,10 @@
 package com.rpgcore.client;
 
+import com.rpgcore.data.PlayerAttribute;
 import com.rpgcore.data.PlayerRpgData;
-import com.rpgcore.network.IncrementDiagnosticPayload;
+import com.rpgcore.network.AllocateAttributePayload;
 import com.rpgcore.network.RequestRpgDataPayload;
+import com.rpgcore.network.ResetAttributesPayload;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
@@ -10,154 +12,104 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+/** Simple first playable attribute allocation screen. */
 public final class RpgDataScreen extends Screen {
-    private static final int PANEL_WIDTH = 340;
-    private static final int PANEL_HEIGHT = 238;
+    private static final int PANEL_WIDTH = 390;
+    private static final int PANEL_HEIGHT = 300;
 
-    private static final String[] STAT_NAMES = {
-            "Health", "Defense", "Attack", "Speed",
-            "Jump Height", "Luck", "Mining Speed"
+    private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
+    private static final String[] DISPLAY_NAMES = {
+            "Strength", "Agility", "Constitution", "Intelligence", "Spirit"
     };
 
-    private final StringWidget[] statNameLabels = new StringWidget[STAT_NAMES.length];
-    private final StringWidget[] statValueLabels = new StringWidget[STAT_NAMES.length];
-
-    private StringWidget waitingLabel;
+    private final StringWidget[] valueLabels = new StringWidget[ATTRIBUTES.length];
+    private StringWidget levelLabel;
+    private StringWidget xpLabel;
     private StringWidget pointsLabel;
-    private StringWidget historyLabel;
-    private StringWidget counterLabel;
+    private StringWidget waitingLabel;
+    private StringWidget diagnosticLabel;
 
     public RpgDataScreen() {
-        super(Component.translatable("screen.rpgcore.title"));
+        super(Component.literal("RPG Core"));
     }
 
     @Override
     protected void init() {
-        int panelLeft = (this.width - Math.min(PANEL_WIDTH, this.width - 12)) / 2;
-        int panelWidth = Math.min(PANEL_WIDTH, this.width - 12);
-        int panelTop = Math.max(4, (this.height - PANEL_HEIGHT) / 2);
-        int textX = panelLeft + 22;
-        int textY = panelTop + 47;
-        int textWidth = Math.max(80, panelWidth - 44);
+        int left = (width - PANEL_WIDTH) / 2;
+        int top = (height - PANEL_HEIGHT) / 2;
 
-        this.addRenderableWidget(Button.builder(
-                Component.translatable("screen.rpgcore.increment_test"),
-                button -> PacketDistributor.sendToServer(new IncrementDiagnosticPayload())
-        ).bounds(this.width / 2 - 88, panelTop + 205, 176, 20).build());
+        addText(left + 8, top + 12, PANEL_WIDTH - 16, "RPG CORE", 0xFFFFD778, true);
+        addText(left + 12, top + 32, PANEL_WIDTH - 24,
+                "Independent level and freely assigned attributes", 0xFFD5CBBB, true);
 
-        // Render every text line as a vanilla StringWidget, just like the working
-        // button uses vanilla widget rendering, instead of drawing text directly.
-        addTextLabel(
-                panelLeft + 7, panelTop + 14, panelWidth - 14, 10,
-                this.title, 0xFFFFD778, true
-        );
-        addTextLabel(
-                panelLeft + 7, panelTop + 28, panelWidth - 14, 10,
-                Component.translatable("screen.rpgcore.subtitle"), 0xFFD5CBBB, true
-        );
+        levelLabel = addText(left + 22, top + 55, 340, "RPG Level: ...", 0xFFF0E9DC, false);
+        xpLabel = addText(left + 22, top + 70, 340, "RPG Experience: ...", 0xFFF0E9DC, false);
+        pointsLabel = addText(left + 22, top + 85, 340, "Available Points: ...", 0xFFFFD778, false);
+        waitingLabel = addText(left + 22, top + 103, 340, "Waiting for server data...", 0xFFFFD778, false);
 
-        this.waitingLabel = addTextLabel(
-                textX, textY, textWidth, 10,
-                Component.translatable("screen.rpgcore.waiting"), 0xFFFFD778, false
-        );
+        for (int i = 0; i < ATTRIBUTES.length; i++) {
+            final PlayerAttribute attribute = ATTRIBUTES[i];
+            int rowY = top + 126 + i * 24;
+            addText(left + 22, rowY + 5, 145, DISPLAY_NAMES[i], 0xFFF0E9DC, false);
+            valueLabels[i] = addText(left + 172, rowY + 5, 54, "0", 0xFFFFD778, false);
 
-        for (int i = 0; i < STAT_NAMES.length; i++) {
-            this.statNameLabels[i] = addTextLabel(
-                    textX, textY + i * 15, 160, 10,
-                    Component.literal(STAT_NAMES[i]), 0xFFF0E9DC, false
-            );
-            this.statValueLabels[i] = addTextLabel(
-                    textX + 190, textY + i * 15, 75, 10,
-                    Component.literal("0"), 0xFFFFD778, false
-            );
-            this.statNameLabels[i].visible = false;
-            this.statValueLabels[i].visible = false;
+            addRenderableWidget(Button.builder(Component.literal("+1"),
+                    button -> PacketDistributor.sendToServer(
+                            new AllocateAttributePayload(attribute.networkId(), 1)))
+                    .bounds(left + 240, rowY, 38, 20).build());
+
+            addRenderableWidget(Button.builder(Component.literal("+10"),
+                    button -> PacketDistributor.sendToServer(
+                            new AllocateAttributePayload(attribute.networkId(), 10)))
+                    .bounds(left + 282, rowY, 44, 20).build());
         }
 
-        this.pointsLabel = addTextLabel(
-                textX, textY + 111, textWidth, 10,
-                Component.empty(), 0xFFF0E9DC, false
-        );
-        this.historyLabel = addTextLabel(
-                textX, textY + 126, textWidth, 10,
-                Component.empty(), 0xFFF0E9DC, false
-        );
-        this.counterLabel = addTextLabel(
-                textX, textY + 148, textWidth, 10,
-                Component.empty(), 0xFF9AF0B2, false
-        );
+        addRenderableWidget(Button.builder(Component.literal("Reset Attributes (Free)"),
+                button -> PacketDistributor.sendToServer(new ResetAttributesPayload()))
+                .bounds(left + 22, top + 258, 170, 20).build());
 
-        this.pointsLabel.visible = false;
-        this.historyLabel.visible = false;
-        this.counterLabel.visible = false;
-
+        diagnosticLabel = addText(left + 205, top + 263, 170, "Test Counter: 0", 0xFF9AF0B2, false);
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
 
-    private StringWidget addTextLabel(int x, int y, int width, int height,
-                                      Component message, int color, boolean centered) {
-        StringWidget label = new StringWidget(x, y, width, height, message, this.font)
-                .setColor(color);
-        if (centered) {
-            label.alignCenter();
-        } else {
-            label.alignLeft();
-        }
-        return this.addRenderableOnly(label);
+    private StringWidget addText(int x, int y, int width, String text, int color, boolean centered) {
+        StringWidget widget = new StringWidget(x, y, width, 10, Component.literal(text), font).setColor(color);
+        if (centered) widget.alignCenter(); else widget.alignLeft();
+        return addRenderableOnly(widget);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Keep the diagnostic panel fully opaque and render it before all widgets.
-        graphics.fill(0, 0, this.width, this.height, 0xFF0D0C0A);
+        graphics.fill(0, 0, width, height, 0xFF0D0C0A);
+        int left = (width - PANEL_WIDTH) / 2;
+        int top = (height - PANEL_HEIGHT) / 2;
+        graphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xFF1B1A18);
+        graphics.fill(left, top, left + PANEL_WIDTH, top + 3, 0xFFE0B45C);
+        graphics.fill(left + 5, top + 5, left + PANEL_WIDTH - 5, top + PANEL_HEIGHT - 5, 0xFF3B3022);
+        graphics.fill(left + 7, top + 7, left + PANEL_WIDTH - 7, top + PANEL_HEIGHT - 7, 0xFF171615);
 
-        int panelLeft = (this.width - Math.min(PANEL_WIDTH, this.width - 12)) / 2;
-        int panelWidth = Math.min(PANEL_WIDTH, this.width - 12);
-        int panelTop = Math.max(4, (this.height - PANEL_HEIGHT) / 2);
-        int panelRight = panelLeft + panelWidth;
-        int panelBottom = Math.min(this.height - 4, panelTop + PANEL_HEIGHT);
-
-        graphics.fill(panelLeft, panelTop, panelRight, panelBottom, 0xFF1B1A18);
-        graphics.fill(panelLeft, panelTop, panelRight, panelTop + 3, 0xFFE0B45C);
-        graphics.fill(panelLeft + 5, panelTop + 5, panelRight - 5, panelBottom - 5, 0xFF3B3022);
-        graphics.fill(panelLeft + 7, panelTop + 7, panelRight - 7, panelBottom - 7, 0xFF171615);
-
-        PlayerRpgData data = ClientRpgDataCache.get();
         boolean hasData = ClientRpgDataCache.hasServerData();
-        this.waitingLabel.visible = !hasData;
-
+        waitingLabel.visible = !hasData;
         if (hasData) {
-            int[] values = {
-                    data.health(), data.defense(), data.attack(), data.speed(),
-                    data.jumpHeight(), data.luck(), data.miningSpeed()
-            };
+            PlayerRpgData data = ClientRpgDataCache.get();
+            levelLabel.setMessage(Component.literal("RPG Level: " + data.rpgLevel()));
+            xpLabel.setMessage(Component.literal("RPG Experience: " + data.experienceProgress()
+                    + " / " + safeRequired(data.rpgLevel())));
+            pointsLabel.setMessage(Component.literal("Available Points: "
+                    + data.availableAttributePoints() + "   Total Earned: " + data.totalAttributePoints()));
+
+            long[] values = {data.strength(), data.agility(), data.constitution(),
+                    data.intelligence(), data.spirit()};
             for (int i = 0; i < values.length; i++) {
-                this.statNameLabels[i].visible = true;
-                this.statValueLabels[i].visible = true;
-                this.statValueLabels[i].setMessage(Component.literal(Integer.toString(values[i])));
+                valueLabels[i].setMessage(Component.literal(Long.toString(values[i])));
             }
-
-            this.pointsLabel.visible = true;
-            this.pointsLabel.setMessage(Component.literal(
-                    "Available Points: " + data.availablePoints()
-                            + "   Lifetime Earned: " + data.lifetimeEarnedPoints()
-            ));
-
-            this.historyLabel.visible = true;
-            this.historyLabel.setMessage(Component.literal(
-                    "Highest Level: " + data.lifetimeHighestLevel()
-                            + "   Reward Baseline: " + data.rewardBaselineLevel()
-            ));
-
-            this.counterLabel.visible = true;
-            this.counterLabel.setMessage(Component.literal(
-                    "Persistence Test Counter: " + data.diagnosticCounter()
-            ));
+            diagnosticLabel.setMessage(Component.literal("Test Counter: " + data.diagnosticCounter()));
         }
-
-        // Vanilla widgets render after the panel fill, keeping every line on the
-        // same widget rendering path as the increment button.
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private static long safeRequired(int level) {
+        return com.rpgcore.progression.RpgProgression.experienceRequiredForNextLevel(level);
     }
 
     @Override
