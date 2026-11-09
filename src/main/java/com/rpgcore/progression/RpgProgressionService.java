@@ -1,5 +1,6 @@
 package com.rpgcore.progression;
 
+import com.rpgcore.config.RpgCoreConfig;
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerAttribute;
 import com.rpgcore.data.PlayerRpgData;
@@ -36,7 +37,7 @@ public final class RpgProgressionService {
         int level = current.rpgLevel();
 
         while (level < RpgProgression.MAX_LEVEL && remaining > 0L) {
-            long required = RpgProgression.experienceRequiredForNextLevel(level);
+            long required = RpgCoreConfig.experienceRequiredForLevel(level);
             long needed = Math.max(0L, required - progress);
             if (needed == 0L) {
                 level++;
