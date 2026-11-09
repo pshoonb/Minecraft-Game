@@ -126,6 +126,12 @@ public final class CombatParticipationTracker {
      * orbs. No nearby or previously existing XP orb is searched or modified.
      */
     public static void onExperienceDrop(LivingExperienceDropEvent event) {
+        // Respect an earlier cancellation by another mod; canceled XP must
+        // remain canceled and must not be recreated by Experience Loot.
+        if (event.isCanceled()) {
+            return;
+        }
+
         LivingEntity victim = event.getEntity();
         if (!(victim.level() instanceof ServerLevel serverLevel)) {
             return;
