@@ -1,8 +1,17 @@
 {
-  "key.rpgcore.open_menu": "Open RPG Data Prototype",
+  "key.rpgcore.open_menu": "Open RPG Core Menu",
   "key.categories.rpgcore": "RPG Core",
-  "screen.rpgcore.title": "RPG DATA PROTOTYPE",
-  "screen.rpgcore.subtitle": "Server-authoritative player data check",
+  "screen.rpgcore.title": "RPG CORE",
+  "screen.rpgcore.subtitle": "Independent level and freely assigned attributes",
+  "screen.rpgcore.level": "RPG Level: %s",
+  "screen.rpgcore.xp": "RPG XP Progress: %s",
+  "screen.rpgcore.points": "Available Points: %s   Total Earned: %s",
   "screen.rpgcore.waiting": "Waiting for server data...",
-  "screen.rpgcore.increment_test": "Increment Test Counter"
+  "screen.rpgcore.reset": "Reset Attributes (Free)",
+  "screen.rpgcore.counter": "Test Counter: %s",
+  "screen.rpgcore.stat.strength": "Strength",
+  "screen.rpgcore.stat.agility": "Agility",
+  "screen.rpgcore.stat.constitution": "Constitution",
+  "screen.rpgcore.stat.intelligence": "Intelligence",
+  "screen.rpgcore.stat.spirit": "Spirit"
 }
