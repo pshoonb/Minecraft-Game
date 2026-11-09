@@ -1161,7 +1161,7 @@ def install_mod(mod_file, state):
     # Remove only backup files that match the naming pattern previously created
     # by this installer (for example: rpgcore-0.2.7.jar.backup-20261110-031500).
     legacy_backup_pattern = re.compile(
-        r"^rpgcore-.+\\.jar\\.backup-\\d{8}-\\d{6}(?:-\\d+)?$",
+        r"^rpgcore-.+\.jar\.backup-\d{8}-\d{6}(?:-\d+)?$",
         re.IGNORECASE
     )
     for old_backup in mods_dir.iterdir():
