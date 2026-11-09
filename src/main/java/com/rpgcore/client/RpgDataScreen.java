@@ -24,6 +24,10 @@ public final class RpgDataScreen extends Screen {
     private StringWidget pointsLabel;
     private StringWidget waitingLabel;
 
+    public RpgDataScreen() {
+        this(null);
+    }
+
     public RpgDataScreen(Screen parentScreen) {
         super(Component.translatable("screen.rpgcore.title"));
         this.parentScreen = parentScreen;
