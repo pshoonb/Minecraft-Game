@@ -8,7 +8,11 @@
 - [ ] Both sides report the same mod version.
 
 ## Per-player persistence
-- [ ] Opening the screen requests a server snapshot.
+- [ ] Open the player inventory and verify the RPG Attributes button appears below the inventory panel.
+- [ ] Click the button and verify the RPG panel opens.
+- [ ] Close the RPG panel and verify it returns to the inventory screen.
+- [ ] Verify the P key no longer opens the RPG panel and does not interfere with vanilla controls.
+- [ ] Opening the RPG panel requests a server snapshot.
 - [ ] Incrementing the diagnostic counter changes only server-side attachment data.
 - [ ] Reopening the screen displays the updated counter.
 - [ ] Logout/login preserves the counter.
