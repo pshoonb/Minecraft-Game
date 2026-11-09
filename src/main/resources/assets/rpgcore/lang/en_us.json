@@ -13,5 +13,8 @@
   "screen.rpgcore.stat.intelligence": "Intelligence",
   "screen.rpgcore.stat.spirit": "Spirit",
   "screen.rpgcore.stat.experience_loot": "Experience Loot",
-  "button.rpgcore.open_panel": "RPG Attributes"
+  "button.rpgcore.open_panel": "RPG Attributes",
+  "screen.rpgcore.stat.points": "%s pts",
+  "screen.rpgcore.effect.pending": "Current effect: Not connected to gameplay yet",
+  "screen.rpgcore.effect.experience_loot": "Current effect: XP calculation multiplier +%s percent (2 percent per point, provisional)"
 }
