@@ -1,7 +1,7 @@
 package com.rpgcore.data;
 
 /**
- * The five freely assignable character attributes.
+ * The freely assignable character attributes.
  *
  * <p>These values are intentionally kept separate from Minecraft combat
  * attributes until the gameplay conversion rules are finalized.</p>
@@ -11,7 +11,8 @@ public enum PlayerAttribute {
     AGILITY(1, "agility"),
     CONSTITUTION(2, "constitution"),
     INTELLIGENCE(3, "intelligence"),
-    SPIRIT(4, "spirit");
+    SPIRIT(4, "spirit"),
+    EXPERIENCE_LOOT(5, "experience_loot");
 
     private final int networkId;
     private final String serializedName;
