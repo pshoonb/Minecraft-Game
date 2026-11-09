@@ -24,6 +24,7 @@
 - [ ] Luck increases the vanilla Luck attribute.
 - [ ] Speed increases movement speed.
 - [ ] Jump Height increases the upward velocity of player jumps.
+- [ ] Server-side modifier refresh restores missing modifiers without stacking duplicates.
 - [ ] Repeated allocations, resets, level changes, login, and respawn do not duplicate transient modifiers.
 - [ ] Lowering maximum health clamps current health to the new maximum.
 
