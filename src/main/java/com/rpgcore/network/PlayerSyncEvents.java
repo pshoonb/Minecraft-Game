@@ -9,14 +9,14 @@ public final class PlayerSyncEvents {
 
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            RpgProgressionService.initializeIfNeeded(player);
+            RpgProgressionService.syncVanillaLevel(player);
             NetworkHandler.sendSnapshot(player);
         }
     }
 
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            RpgProgressionService.initializeIfNeeded(player);
+            RpgProgressionService.syncVanillaLevel(player);
             NetworkHandler.sendSnapshot(player);
         }
     }
