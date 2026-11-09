@@ -8,8 +8,10 @@
   "screen.rpgcore.waiting": "正在等待服务器数据……",
   "screen.rpgcore.reset": "免费重置属性",
   "screen.rpgcore.stat.strength": "力量",
-  "screen.rpgcore.stat.agility": "敏捷",
-  "screen.rpgcore.stat.constitution": "体质",
-  "screen.rpgcore.stat.intelligence": "智力",
-  "screen.rpgcore.stat.spirit": "精神"
+  "screen.rpgcore.stat.health": "生命值",
+  "screen.rpgcore.stat.defense": "防御力",
+  "screen.rpgcore.stat.mining_speed": "挖掘速度",
+  "screen.rpgcore.stat.luck": "幸运",
+  "screen.rpgcore.stat.speed": "速度",
+  "screen.rpgcore.stat.jump_height": "跳跃高度"
 }

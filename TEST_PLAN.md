@@ -1,34 +1,41 @@
-# Prototype Acceptance Checklist
+# RPG Core 0.3.0 Prototype Acceptance Checklist
 
 ## Build and launch
-- [ ] Build completes with Java 21 and NeoForge 21.1.265.
-- [ ] JAR appears in `build/libs/`.
-- [ ] Client starts with the prototype loaded.
-- [ ] Dedicated server starts without attempting to load client-only classes.
-- [ ] Both sides report the same mod version.
+- [ ] Java 21 / NeoForge 21.1.265 build succeeds.
+- [ ] Build artifact contains the mod JAR and SHA256SUMS.txt.
+- [ ] SHA-256 listed in the workflow summary matches the downloaded JAR.
+- [ ] Client and dedicated server both start.
 
-## Per-player persistence
-- [ ] Opening the screen requests a server snapshot.
-- [ ] Incrementing the diagnostic counter changes only server-side attachment data.
-- [ ] Reopening the screen displays the updated counter.
-- [ ] Logout/login preserves the counter.
-- [ ] Death/respawn preserves the counter.
-- [ ] Dedicated-server restart preserves the counter.
-- [ ] Switching to another server clears the old client's cached snapshot.
+## Progression and persistence
+- [ ] RPG level follows vanilla experience level.
+- [ ] Attribute points follow the agreed cumulative formula.
+- [ ] Level 100 grants 7,550 cumulative points; level 150 grants 15,675.
+- [ ] Spending vanilla levels does not revoke earned attribute points.
+- [ ] Logout/login and death/respawn preserve allocation and restore effects.
+- [ ] Free reset removes all seven effects and refunds allocated points.
+
+## Seven gameplay attributes
+- [ ] Strength increases attack damage.
+- [ ] Health increases maximum health.
+- [ ] Defense reduces ordinary, fire/burning, and explosion damage and reduces explosion knockback.
+- [ ] At more than 60% defense reduction, raw hits below the scaled threshold are cancelled before armor durability or absorption is consumed; intentional bypass-invulnerability damage remains unaffected.
+- [ ] Defense reduction approaches 90%, and the immunity threshold approaches 15 raw damage.
+- [ ] Mining Speed increases general block-break speed and suitable-tool mining efficiency.
+- [ ] Luck adds extra coal, diamond, emerald, lapis, redstone, copper, iron, gold, quartz, and ancient-debris resource drops.
+- [ ] Silk Touch ore-block drops are not duplicated by Mining Luck.
+- [ ] Fortune output is preserved when Mining Luck adds copies of the calculated resource drops.
+- [ ] Speed increases movement speed on client and server.
+- [ ] Jump Height increases actual jump height and simultaneously increases safe-fall distance and reduces fall damage.
+- [ ] Repeated application does not stack duplicate modifiers.
+- [ ] Soft-cap curve has no 10,000-point hard cap.
+
+## Allocation buttons
+- [ ] +1 allocates one point.
+- [ ] +10 allocates up to ten points.
+- [ ] +100 allocates up to one hundred points.
+- [ ] When fewer points remain than requested, each button spends all remaining points rather than rejecting the allocation.
 
 ## Multiplayer isolation
-- [ ] Two different UUIDs receive independent attachment values.
-- [ ] Player A's increment does not change player B's value.
-- [ ] Player B's increment does not change player A's value.
-- [ ] A client cannot choose a target UUID in the increment request.
-- [ ] Only the connected player receives their own sync snapshot.
-
-## Follow-up gameplay tests (not implemented in this prototype)
-- [ ] Health maximum/current-health behavior.
-- [ ] Defense damage paths and other-mod ordering.
-- [ ] Attack damage, critical hits, enchantments and cooldown.
-- [ ] Speed in land/water, sneak/sprint, flight and vehicles.
-- [ ] Jump height plus Jump Boost.
-- [ ] Luck kill attribution and duplicate-drop prevention.
-- [ ] Mining speed across tools, block hardness and server correction.
-- [ ] RPG menu and HUD at several GUI scales/resolutions.
+- [ ] Two players have independent attributes and effects.
+- [ ] Allocating or resetting one player does not affect another.
+- [ ] A client cannot allocate points to another player's UUID.

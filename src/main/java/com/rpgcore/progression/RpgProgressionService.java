@@ -24,26 +24,45 @@ public final class RpgProgressionService {
         PlayerRpgData updated = current.progressionInitialized()
                 ? current.withVanillaLevel(vanillaLevel)
                 : current.initializeProgression(vanillaLevel);
+
         if (!updated.equals(current)) {
             player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
             NetworkHandler.sendSnapshot(player);
         }
+
+        RpgGameplayEffects.apply(player, updated);
     }
 
-    public static void allocateAttribute(ServerPlayer player, PlayerAttribute attribute, int amount) {
-        if (attribute == null || amount < 1 || amount > 100) return;
-        syncVanillaLevel(player);
+    /** Rebuilds transient modifiers from the player's authoritative saved data. */
+    public static void refreshGameplayEffects(ServerPlayer player) {
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        if (current.availableAttributePoints() < amount) return;
+        RpgGameplayEffects.apply(player, current);
+    }
 
-        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), current.addAttribute(attribute, amount));
+    public static void allocateAttribute(ServerPlayer player, PlayerAttribute attribute, int requestedAmount) {
+        if (attribute == null || requestedAmount < 1 || requestedAmount > 100) return;
+        syncVanillaLevel(player);
+
+        PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        long available = current.availableAttributePoints();
+        if (available <= 0L) return;
+
+        // The +10 button requests 10 points, but spends only what remains.
+        // Example: with 3 points available, one +10 click allocates exactly 3.
+        int amountToSpend = (int) Math.min((long) requestedAmount, available);
+        PlayerRpgData updated = current.addAttribute(attribute, amountToSpend);
+
+        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
+        RpgGameplayEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
     }
 
     public static void resetAttributes(ServerPlayer player) {
         syncVanillaLevel(player);
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), current.resetAttributes());
+        PlayerRpgData updated = current.resetAttributes();
+        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
+        RpgGameplayEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
     }
 }

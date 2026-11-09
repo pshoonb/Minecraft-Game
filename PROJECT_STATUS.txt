@@ -1,29 +1,47 @@
-RPG Core Prototype 0.2.1
+RPG Core Prototype 0.3.0
 
 Target:
 - Minecraft Java Edition 1.21.1
 - NeoForge 21.1.265
 - Java 21
-- ModDevGradle 2.0.148
 
-Implemented in source:
-- RPG level mirrors the vanilla player experience level.
-- Vanilla level changes synchronize to the RPG attribute screen.
-- Attribute points are based on the highest vanilla level reached, so spending vanilla levels does not revoke earned points.
-- Five assignable attributes: Strength, Agility, Constitution, Intelligence, Spirit.
-- Agreed cumulative attribute-point formula.
-- Free attribute reset.
-- Server-authoritative attribute allocation and reset.
-- Per-player attachment persistence and UUID-checked client sync.
-- P-key attribute screen with English and Simplified Chinese localization.
-- Removed diagnostic counter UI/network payload and separate RPG XP progression.
+Implemented:
+- Seven agreed attributes and the unchanged level-point formula.
+- Level 100-150 is the primary balance target.
+- Logarithmic soft-cap curve: first 25 effective points are linear; later points continue to add diminishing returns without a hard cap.
+- Attribute modifiers are applied on the authoritative server and owning client.
+- Jump Height also increases safe fall distance and reduces fall damage.
+- Defense adds armor, up to 90% final damage reduction after vanilla mitigation, a raw-damage immunity threshold that unlocks after 60%, reduced burning time, and explosion knockback resistance.
+- Mining Speed affects both general block-break speed and suitable-tool mining efficiency.
+- Luck adds extra resource drops for vanilla ore blocks, using the server-side BlockDropsEvent; vanilla Fortune results are duplicated as extra rolls, but silk-touch ore-block drops are not copied.
+- Attribute GUI has +1, +10, and +100 allocation buttons; each button spends min(requested, available).
+- Per-player persistent data, server-authoritative allocation, UUID-checked sync, and free reset remain.
+
+Current tuning per effective attribute point:
+- Strength: +0.20 attack damage.
+- Health: +0.35 maximum health.
+- Defense: +0.30 armor (direct armor capped at +20), plus up to 90% additional final damage reduction, a raw-damage immunity threshold that unlocks above 60% reduction (0.5 raw damage per percentage point above 60%, approaching 15 damage at 90%), 60% burning-time reduction, and 70% explosion knockback resistance.
+- Mining Speed: +2% block-break speed and +0.30 mining efficiency.
+- Luck: +0.20 vanilla Luck; one extra ore-resource roll per 40 effective Luck, with fractional progress as chance.
+- Speed: +1.2% movement speed.
+- Jump Height: +1.5% upward jump velocity, +0.75 safe-fall distance per effective point, and up to 75% additional fall damage reduction.
+
+Notes:
+- Luck mining bonus applies to coal, diamond, emerald, lapis, redstone, copper, iron, gold, nether quartz, and ancient debris drops; it does not duplicate ore blocks dropped by Silk Touch.
+- Extra ore drops duplicate vanilla-calculated resource stacks, so Fortune results are preserved.
+- Jump and fall-safety effects use the same saved Jump Height allocation.
+- The agreed level reward formula is unchanged.
+
+Legacy migration:
+- Strength allocation is retained.
+- Removed prototype attribute allocations are refunded.
+- Current level, highest level, and total earned points remain.
 
 Not implemented:
-- Attribute-to-gameplay conversion (health/attack/armor/speed etc.); exact ratios not approved.
-- Exploration, quest, and gathering-specific rewards.
-- Monster level scaling, equipment, loot, quests, exploration content.
-- Final balancing and release packaging.
+- Final in-game balancing and full compatibility testing.
 
-Validation:
-- Source changes are committed to the fix branch.
-- A fresh Gradle/NeoForge build and in-game test are still required for this revision.
+Validation required:
+- Test early allocations (10/25/50) for all attributes.
+- Test mining Luck on several ore types, including Silk Touch behavior.
+- Test Jump Height and fall safety together.
+- Test +1/+10/+100, reset, level spending, login/respawn persistence, and multiplayer isolation.
