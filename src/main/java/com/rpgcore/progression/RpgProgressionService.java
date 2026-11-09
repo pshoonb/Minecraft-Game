@@ -4,6 +4,7 @@ import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerAttribute;
 import com.rpgcore.data.PlayerRpgData;
 import com.rpgcore.network.NetworkHandler;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Server-side API for RPG XP, level progression and attribute allocation. */
@@ -53,6 +54,10 @@ public final class RpgProgressionService {
 
         player.setData(ModAttachments.PLAYER_RPG_DATA.get(),
                 current.withProgression(level, progress, totalXp));
+        if (level > current.rpgLevel()) {
+            player.displayClientMessage(
+                    Component.literal("RPG Level Up! Level " + level), true);
+        }
         NetworkHandler.sendSnapshot(player);
     }
 
