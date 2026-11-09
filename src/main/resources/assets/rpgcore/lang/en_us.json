@@ -1,6 +1,4 @@
 {
-  "key.rpgcore.open_menu": "Open RPG Core Menu",
-  "key.categories.rpgcore": "RPG Core",
   "screen.rpgcore.title": "RPG CORE",
   "screen.rpgcore.subtitle": "RPG level follows your vanilla player level",
   "screen.rpgcore.level": "Player Level: %s",
@@ -11,7 +9,7 @@
   "screen.rpgcore.stat.defense": "Defense",
   "screen.rpgcore.stat.health": "Health",
   "screen.rpgcore.stat.mining_speed": "Mining Speed",
-  "screen.rpgcore.stat.speed": "Movement Speed",
+  "screen.rpgcore.stat.speed": "Move Speed",
   "screen.rpgcore.stat.jump_height": "Jump Height",
   "screen.rpgcore.stat.luck": "Luck",
   "screen.rpgcore.stat.experience_loot": "XP Loot",
