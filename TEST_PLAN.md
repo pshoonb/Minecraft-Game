@@ -7,37 +7,46 @@
 - [ ] Dedicated server starts without attempting to load client-only classes.
 - [ ] Both sides report the same mod version.
 
-## Per-player persistence
+## Per-player persistence and UI
 - [ ] Open the player inventory and verify the RPG Attributes button appears below the inventory panel.
 - [ ] Click the button and verify the RPG panel opens.
 - [ ] Close the RPG panel and verify it returns to the inventory screen.
 - [ ] Verify the P key no longer opens the RPG panel and does not interfere with vanilla controls.
 - [ ] Opening the RPG panel requests a server snapshot.
-- [ ] Incrementing the diagnostic counter changes only server-side attachment data.
-- [ ] Reopening the screen displays the updated counter.
-- [ ] Logout/login preserves the counter.
-- [ ] Death/respawn preserves the counter.
-- [ ] Dedicated-server restart preserves the counter.
-- [ ] Switching to another server clears the old client's cached snapshot.
-
-## Multiplayer isolation
-- [ ] Two different UUIDs receive independent attachment values.
-- [ ] Player A's increment does not change player B's value.
-- [ ] Player B's increment does not change player A's value.
-- [ ] A client cannot choose a target UUID in the increment request.
-- [ ] Only the connected player receives their own sync snapshot.
-
-## Experience loot
-- [ ] The sixth attribute, Experience Loot, appears in the attribute screen and can be allocated.
+- [ ] The sixth attribute, Experience Loot, appears and can be allocated.
 - [ ] Existing player attachment data loads with Experience Loot defaulting to zero.
+- [ ] Logout/login, death/respawn and dedicated-server restart preserve the allocated attribute values.
+
+## Combat participation
 - [ ] Only server-side, successfully applied player damage adds a participant.
 - [ ] Direct player attacks and player-owned projectiles are both attributed to the player.
-- [ ] Repeated damage by one player refreshes their 60-second participation timer without duplicating their entry.
+- [ ] Repeated damage by one player refreshes their 60-second timer without duplicating their entry.
 - [ ] A participant is excluded once 1,200 game ticks have elapsed since their last successful hit.
-- [ ] Multiplayer kills use the highest Experience Loot value among active online participants, not only the final attacker.
-- [ ] The bonus is applied to the entity's existing XP drop once, with fractional results rounded down.
-- [ ] Entities with zero original XP do not create XP through Experience Loot.
-- [ ] Participation records are removed after XP-drop handling and expire during server ticking.
+- [ ] At LivingDeathEvent, the current Experience Loot value is snapshotted from the highest eligible online participant.
+- [ ] Changing an attribute after the target has died does not change the stored value used by subsequent XP batches.
+- [ ] A death canceled by another event listener does not leave a valid death snapshot.
+
+## Experience-orb denomination calculation
+- [ ] Vanilla denomination counting uses 2477, 1237, 617, 307, 149, 73, 37, 17, 7, 3, 1 in descending greedy order.
+- [ ] For S=6, N=3; for S=10, N=4; for S=960, the count matches vanilla's denomination split.
+- [ ] P is floor(S * (1 + 2% * L)).
+- [ ] Q is P // (max(2, N) - 1).
+- [ ] Every logical orb in the batch gets denomination Q; the logical orb count remains N.
+- [ ] N=0 creates no orbs; N=1 and N=2 both use divisor 1.
+- [ ] The calculation rounds down and uses overflow-safe integer arithmetic.
+- [ ] A computed Q above 32767 is capped at 32767 so the saved short Value cannot turn negative.
+
+## Drop ownership and merging
+- [ ] Only the current LivingExperienceDropEvent batch is canceled and replaced.
+- [ ] The vanilla XP batch is not also emitted (no duplicate reward).
+- [ ] No nearby existing ExperienceOrb is scanned, selected, or rewritten by this mod.
+- [ ] A new orb merging with an existing orb of the same denomination only increases the merged entity's count; the denomination remains unchanged.
+- [ ] Existing orbs with different denominations are unchanged.
+- [ ] Other entities' later XP drops are independently calculated using only their own participant snapshots.
+- [ ] Ender Dragon's multiple XP award batches are all processed separately and retain their vanilla timing.
+- [ ] Entities with zero XP do not create XP through Experience Loot.
+- [ ] Mining, smelting, and other non-LivingExperienceDropEvent XP sources remain unchanged.
+- [ ] Entity tracking data is cleared when the living entity leaves its level.
 
 ## Follow-up gameplay tests (not implemented in this prototype)
 - [ ] Health maximum/current-health behavior.
