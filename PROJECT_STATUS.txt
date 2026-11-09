@@ -54,3 +54,9 @@ User-provided marginal attribute formulas (x is the current number of points all
 - Luck: mineral extra-drop amounts are 1-15, using dynamic descending weights based on the base vector [150, 145, 140, 135, 130, 125, 120, 115, 110, 105, 100, 95, 90, 85, 80]. Higher Luck flattens the distribution, relatively favoring larger quantities.
 - Luck's creature equipment-drop probability bonus reuses the Mining Speed cumulative percentage formula.
 - Experience Loot reuses the Mining Speed cumulative percentage formula.
+
+Luck probability implementation detail:
+- For living-entity loot contexts with a player attacker (including player-owned projectiles), Luck applies the same cumulative Mining Speed percentage bonus to vanilla random-chance predicates and random-chance-with-enchanted-bonus predicates.
+- The chance adjustment is mathematically equivalent to multiplying the predicate's existing probability by (1 + LuckBonusPercent / 100), capped by the predicate's natural 100% maximum.
+- Random-chance-with-enchanted-bonus is adjusted after its vanilla Looting-based chance has been calculated, so Looting and Luck remain independent.
+- The implementation does not change deterministic loot conditions, weighted-entry selection weights, or item counts.
