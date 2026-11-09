@@ -16,24 +16,35 @@ concurrency:
 
 jobs:
   build:
-    name: Build on Java 21 / Gradle 9.2.1
+    name: Build on Java 21 / runner Gradle
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Gradle 9.2.1
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.2.1'
+      # The GitHub-hosted Ubuntu image already includes Gradle.
+      # Avoid downloading a separate distribution, which returned HTTP 504.
+      - name: Verify preinstalled Gradle
+        shell: bash
+        run: |
+          if ! command -v gradle >/dev/null 2>&1; then
+            echo "::error::Gradle is not preinstalled on this runner."
+            exit 1
+          fi
+          gradle --version
+          GRADLE_VERSION="$(gradle --version | awk '/^Gradle / { print $2; exit }')"
+          if [[ -z "$GRADLE_VERSION" || "${GRADLE_VERSION%%.*}" != "9" ]]; then
+            echo "::error::Expected a Gradle 9.x installation; found '${GRADLE_VERSION:-unknown}'."
+            exit 1
+          fi
 
       - name: Build mod
         run: gradle --no-daemon clean build --stacktrace
