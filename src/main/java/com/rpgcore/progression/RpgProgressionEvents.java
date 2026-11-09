@@ -2,9 +2,9 @@ package com.rpgcore.progression;
 
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerRpgData;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerPlayer;\nimport net.minecraft.tags.DamageTypeTags;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;\nimport net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -24,6 +24,27 @@ public final class RpgProgressionEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             PlayerRpgData data = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
             RpgGameplayEffects.applyJumpHeight(player, data);
+        }
+    }
+
+    /**
+     * Check the untouched incoming damage before armor, shields, or absorption
+     * are processed. Cancelling here makes below-threshold immunity complete,
+     * rather than merely setting final health damage to zero after armor wears.
+     */
+    public static void onPlayerIncomingDamage(LivingIncomingDamageEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        // Preserve intentional bypasses such as out-of-world damage.
+        if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return;
+        }
+
+        PlayerRpgData data = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        float threshold = RpgGameplayEffects.damageImmunityThreshold(data.defense());
+        if (threshold > 0.0F && event.getOriginalAmount() < threshold) {
+            event.setCanceled(true);
         }
     }
 

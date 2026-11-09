@@ -11,7 +11,7 @@ Implemented:
 - Logarithmic soft-cap curve: first 25 effective points are linear; later points continue to add diminishing returns without a hard cap.
 - Attribute modifiers are applied on the authoritative server and owning client.
 - Jump Height also increases safe fall distance and reduces fall damage.
-- Defense adds armor, final damage reduction after vanilla armor/enchantment handling, reduced burning time, and explosion knockback resistance.
+- Defense adds armor, up to 90% final damage reduction after vanilla mitigation, a raw-damage immunity threshold that unlocks after 60%, reduced burning time, and explosion knockback resistance.
 - Mining Speed affects both general block-break speed and suitable-tool mining efficiency.
 - Luck adds extra resource drops for vanilla ore blocks, using the server-side BlockDropsEvent; vanilla Fortune results are duplicated as extra rolls, but silk-touch ore-block drops are not copied.
 - Attribute GUI has +1, +10, and +100 allocation buttons; each button spends min(requested, available).
@@ -20,7 +20,7 @@ Implemented:
 Current tuning per effective attribute point:
 - Strength: +0.20 attack damage.
 - Health: +0.35 maximum health.
-- Defense: +0.30 armor (direct armor capped at +20), plus up to 40% additional final damage reduction, 60% burning-time reduction, and 70% explosion knockback resistance.
+- Defense: +0.30 armor (direct armor capped at +20), plus up to 90% additional final damage reduction, a raw-damage immunity threshold that unlocks above 60% reduction (0.5 raw damage per percentage point above 60%, approaching 15 damage at 90%), 60% burning-time reduction, and 70% explosion knockback resistance.
 - Mining Speed: +2% block-break speed and +0.30 mining efficiency.
 - Luck: +0.20 vanilla Luck; one extra ore-resource roll per 40 effective Luck, with fractional progress as chance.
 - Speed: +1.2% movement speed.

@@ -39,7 +39,9 @@ public final class RpgGameplayEffects {
     private static final double SPEED_PER_POINT = 0.012D;
     private static final double JUMP_VELOCITY_PER_POINT = 0.015D;
 
-    private static final double MAX_UNIVERSAL_DAMAGE_REDUCTION = 0.40D;
+    private static final double MAX_UNIVERSAL_DAMAGE_REDUCTION = 0.90D;
+    private static final double DAMAGE_IMMUNITY_UNLOCK_REDUCTION = 0.60D;
+    private static final double MAX_DAMAGE_IMMUNITY_THRESHOLD = 15.0D;
     private static final double MAX_BURNING_TIME_REDUCTION = 0.60D;
     private static final double MAX_EXPLOSION_KNOCKBACK_RESISTANCE = 0.70D;
     private static final double MAX_FALL_DAMAGE_REDUCTION = 0.75D;
@@ -112,11 +114,29 @@ public final class RpgGameplayEffects {
         player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
     }
 
+    /** Additional damage reduction after vanilla armor, enchantments, and potion reductions. */
+    public static double defenseDamageReduction(long defensePoints) {
+        double defense = effectiveAttributePoints(defensePoints);
+        return MAX_UNIVERSAL_DAMAGE_REDUCTION * defense / (defense + 50.0D);
+    }
+
+    /** Convert the defense reduction beyond 60% into a raw-damage immunity threshold. */
+    public static float damageImmunityThreshold(long defensePoints) {
+        double reduction = defenseDamageReduction(defensePoints);
+        if (reduction <= DAMAGE_IMMUNITY_UNLOCK_REDUCTION) {
+            return 0.0F;
+        }
+
+        // Each percentage point above 60% adds 0.5 raw damage to the threshold.
+        // The threshold approaches 15 damage as the 90% reduction soft cap is approached.
+        double progress = (reduction - DAMAGE_IMMUNITY_UNLOCK_REDUCTION)
+                / (MAX_UNIVERSAL_DAMAGE_REDUCTION - DAMAGE_IMMUNITY_UNLOCK_REDUCTION);
+        return (float) (MAX_DAMAGE_IMMUNITY_THRESHOLD * Math.min(1.0D, progress));
+    }
+
     /** Reduce final damage after vanilla armor and enchantment handling. */
     public static float damageMultiplier(long defensePoints) {
-        double defense = effectiveAttributePoints(defensePoints);
-        double reduction = MAX_UNIVERSAL_DAMAGE_REDUCTION * defense / (defense + 50.0D);
-        return (float) (1.0D - reduction);
+        return (float) (1.0D - defenseDamageReduction(defensePoints));
     }
 
     /** Increase launch velocity on the actual jump event. Called on client and server. */

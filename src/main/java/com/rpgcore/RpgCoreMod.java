@@ -22,6 +22,7 @@ public final class RpgCoreMod {
         // Explicit server-side registration for progression and gameplay hooks.
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onVanillaLevelChange);
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onPlayerJump);
+        NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onPlayerIncomingDamage);
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onPlayerDamage);
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onOreDrops);
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onPlayerTick);
