@@ -211,9 +211,9 @@ def show_info(text):
 
 def check_installer_update():
     """
-    检查 GitHub 上的安装器源码是否与本地不同。
-    用户可以选择同步更新或继续使用当前版本。
-    更新成功后备份旧文件并重新启动新版安装器。
+    Compare the local installer with the version published on GitHub.
+    Let the user sync the update or continue with the current version.
+    Back up the previous file and restart the updated installer after a successful update.
     """
     installer_path = Path(__file__).resolve()
     temporary_path = installer_path.with_name(
@@ -553,9 +553,9 @@ def get_managed_installed_mod(state):
 
 def choose_mod_to_install(local_mod, state):
     """
-    查询公开 GitHub Release。
-    若本地或游戏目录中已有完全相同的最新版，则直接使用。
-    下载失败时保留并使用可用的旧版本。
+    Check the latest public GitHub Release.
+    Reuse the latest version if an identical copy already exists locally or in the game folder.
+    Keep using an available previous version if the download fails.
     """
 
     installed_mod = get_managed_installed_mod(state)
