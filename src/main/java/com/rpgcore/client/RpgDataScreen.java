@@ -15,7 +15,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /** Player level and attribute allocation screen. */
 public final class RpgDataScreen extends Screen {
     private static final int PANEL_WIDTH = 390;
-    private static final int PANEL_HEIGHT = 300;
+    private static final int PANEL_HEIGHT = 324;
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
 
     private final Screen parentScreen;
@@ -72,7 +72,7 @@ public final class RpgDataScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.translatable("screen.rpgcore.reset"),
                 button -> PacketDistributor.sendToServer(new ResetAttributesPayload()))
-                .bounds(left + 22, top + 258, 170, 20).build());
+                .bounds(left + 22, top + 282, 170, 20).build());
 
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
@@ -103,7 +103,7 @@ public final class RpgDataScreen extends Screen {
                     data.availableAttributePoints(), data.totalAttributePoints()));
 
             long[] values = {data.strength(), data.agility(), data.constitution(),
-                    data.intelligence(), data.spirit()};
+                    data.intelligence(), data.spirit(), data.experienceLoot()};
             for (int i = 0; i < values.length; i++) {
                 valueLabels[i].setMessage(Component.literal(Long.toString(values[i])));
             }
