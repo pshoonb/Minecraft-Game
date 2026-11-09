@@ -43,3 +43,15 @@ Implementation notes:
 - Cumulative sums use exact evaluation for the first 8,192 points and short midpoint intervals thereafter to avoid unbounded work for high-level characters.
 - Defense's 80% soft cap uses 80 * (1 - exp(-rawReduction / 80)).
 - Player modifiers are transient and reapplied on login and respawn from persistent RPG attachment data.
+
+
+User-provided marginal attribute formulas (x is the current number of points allocated to that attribute):
+- Strength: f(x) = 2 / x; cumulative result is flat Minecraft damage points.
+- Defense: f(x) = min(3, 20 / x) percentage points; total damage reduction uses an 80% soft cap.
+- Health: f(x) = max(0.01, 0.5 / ln(x + e - 1)).
+- Mining Speed: f(x) = 5 / ln(0.1*x + e - 0.1), as a percentage.
+- Movement Speed: same marginal formula as Mining Speed, applied as a percentage.
+- Jump Height: f(x) = 1 / ln(0.5*x + e - 0.5), as additional jump height.
+- Luck: mineral extra-drop amounts are 1-15, using dynamic descending weights based on the base vector [150, 145, 140, 135, 130, 125, 120, 115, 110, 105, 100, 95, 90, 85, 80]. Higher Luck flattens the distribution, relatively favoring larger quantities.
+- Luck's creature equipment-drop probability bonus reuses the Mining Speed cumulative percentage formula.
+- Experience Loot reuses the Mining Speed cumulative percentage formula.
