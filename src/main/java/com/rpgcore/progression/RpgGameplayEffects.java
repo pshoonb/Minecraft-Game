@@ -8,6 +8,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -18,14 +19,14 @@ public final class RpgGameplayEffects {
     private static final long ATTRIBUTE_POINTS_SOFT_CAP = 10_000L;
 
     // Each value is applied per square-root of allocated attribute points.
-    // These rates are intentionally noticeable at ordinary prototype levels.
-    private static final double STRENGTH_DAMAGE_PER_ROOT_POINT = 0.50D;
-    private static final double HEALTH_PER_ROOT_POINT = 1.00D;
-    private static final double DEFENSE_ARMOR_PER_ROOT_POINT = 0.50D;
-    private static final double MINING_SPEED_PER_ROOT_POINT = 0.01D;
-    private static final double LUCK_PER_ROOT_POINT = 0.10D;
-    private static final double SPEED_PER_ROOT_POINT = 0.005D;
-    private static final double JUMP_VELOCITY_PER_ROOT_POINT = 0.01D;
+    // These revised values are intentionally easier to notice at low allocations.
+    private static final double STRENGTH_DAMAGE_PER_ROOT_POINT = 0.75D;
+    private static final double HEALTH_PER_ROOT_POINT = 1.50D;
+    private static final double DEFENSE_ARMOR_PER_ROOT_POINT = 0.75D;
+    private static final double MINING_SPEED_PER_ROOT_POINT = 0.02D;
+    private static final double LUCK_PER_ROOT_POINT = 0.15D;
+    private static final double SPEED_PER_ROOT_POINT = 0.01D;
+    private static final double JUMP_VELOCITY_PER_ROOT_POINT = 0.02D;
 
     private static final ResourceLocation STRENGTH_DAMAGE_ID = id("strength_damage");
     private static final ResourceLocation HEALTH_MAX_HEALTH_ID = id("health_max_health");
@@ -69,8 +70,11 @@ public final class RpgGameplayEffects {
         player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
     }
 
-    /** Adds the jump-height bonus to the upward velocity of an actual player jump. */
-    public static void applyJumpHeight(ServerPlayer player, PlayerRpgData data) {
+    /**
+     * Adds the jump-height bonus to the upward velocity of an actual player jump.
+     * Called on both the local client (prediction) and the logical server.
+     */
+    public static void applyJumpHeight(Player player, PlayerRpgData data) {
         double jumpScale = effectiveAttributePoints(data.jumpHeight())
                 * JUMP_VELOCITY_PER_ROOT_POINT;
         if (jumpScale <= 0.0D) {
@@ -78,7 +82,9 @@ public final class RpgGameplayEffects {
         }
 
         Vec3 velocity = player.getDeltaMovement();
-        player.setDeltaMovement(velocity.x, velocity.y * (1.0D + jumpScale), velocity.z);
+        if (velocity.y > 0.0D) {
+            player.setDeltaMovement(velocity.x, velocity.y * (1.0D + jumpScale), velocity.z);
+        }
     }
 
     private static double effectiveAttributePoints(long points) {
