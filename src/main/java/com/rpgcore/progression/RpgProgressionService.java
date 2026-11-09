@@ -39,13 +39,19 @@ public final class RpgProgressionService {
         RpgGameplayEffects.apply(player, current);
     }
 
-    public static void allocateAttribute(ServerPlayer player, PlayerAttribute attribute, int amount) {
-        if (attribute == null || amount < 1 || amount > 100) return;
+    public static void allocateAttribute(ServerPlayer player, PlayerAttribute attribute, int requestedAmount) {
+        if (attribute == null || requestedAmount < 1 || requestedAmount > 100) return;
         syncVanillaLevel(player);
-        PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        if (current.availableAttributePoints() < amount) return;
 
-        PlayerRpgData updated = current.addAttribute(attribute, amount);
+        PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        long available = current.availableAttributePoints();
+        if (available <= 0L) return;
+
+        // The +10 button requests 10 points, but spends only what remains.
+        // Example: with 3 points available, one +10 click allocates exactly 3.
+        int amountToSpend = (int) Math.min((long) requestedAmount, available);
+        PlayerRpgData updated = current.addAttribute(attribute, amountToSpend);
+
         player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
         RpgGameplayEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
