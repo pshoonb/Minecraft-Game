@@ -12,36 +12,27 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Applies the seven allocated RPG attributes to vanilla player mechanics.
- *
- * <p>These are first-pass prototype tuning values. Each is centralized here
- * so balance can be adjusted without changing saved data, networking, or UI.</p>
- *
- * <p>Attribute points use square-root scaling and a 10,000-point input cap to
- * keep the agreed progression-point curve from producing unbounded bonuses.</p>
+ * First-pass prototype rates are centralized here for easy balancing.
  */
 public final class RpgGameplayEffects {
     private static final long ATTRIBUTE_POINTS_SOFT_CAP = 10_000L;
 
-    private static final double STRENGTH_DAMAGE_PER_ROOT_POINT = 0.10D;
-    private static final double HEALTH_PER_ROOT_POINT = 0.50D;
-    private static final double DEFENSE_ARMOR_PER_ROOT_POINT = 0.20D;
-    private static final double MINING_SPEED_PER_ROOT_POINT = 0.005D;
-    private static final double LUCK_PER_ROOT_POINT = 0.05D;
-    private static final double SPEED_PER_ROOT_POINT = 0.0015D;
-    private static final double JUMP_VELOCITY_PER_ROOT_POINT = 0.002D;
+    // Each value is applied per square-root of allocated attribute points.
+    // These rates are intentionally noticeable at ordinary prototype levels.
+    private static final double STRENGTH_DAMAGE_PER_ROOT_POINT = 0.50D;
+    private static final double HEALTH_PER_ROOT_POINT = 1.00D;
+    private static final double DEFENSE_ARMOR_PER_ROOT_POINT = 0.50D;
+    private static final double MINING_SPEED_PER_ROOT_POINT = 0.01D;
+    private static final double LUCK_PER_ROOT_POINT = 0.10D;
+    private static final double SPEED_PER_ROOT_POINT = 0.005D;
+    private static final double JUMP_VELOCITY_PER_ROOT_POINT = 0.01D;
 
-    private static final ResourceLocation STRENGTH_DAMAGE_ID =
-            id("strength_damage");
-    private static final ResourceLocation HEALTH_MAX_HEALTH_ID =
-            id("health_max_health");
-    private static final ResourceLocation DEFENSE_ARMOR_ID =
-            id("defense_armor");
-    private static final ResourceLocation MINING_SPEED_ID =
-            id("mining_speed");
-    private static final ResourceLocation LUCK_ID =
-            id("luck");
-    private static final ResourceLocation SPEED_ID =
-            id("speed");
+    private static final ResourceLocation STRENGTH_DAMAGE_ID = id("strength_damage");
+    private static final ResourceLocation HEALTH_MAX_HEALTH_ID = id("health_max_health");
+    private static final ResourceLocation DEFENSE_ARMOR_ID = id("defense_armor");
+    private static final ResourceLocation MINING_SPEED_ID = id("mining_speed");
+    private static final ResourceLocation LUCK_ID = id("luck");
+    private static final ResourceLocation SPEED_ID = id("speed");
 
     private RpgGameplayEffects() {
     }
@@ -51,8 +42,8 @@ public final class RpgGameplayEffects {
     }
 
     /**
-     * Replaces this mod's transient modifiers using current server-side data.
-     * Reapplying is safe on allocation, reset, login, and respawn.
+     * Updates the player's vanilla attributes with modifiers derived from
+     * server-authoritative RPG data. Existing modifiers are replaced in place.
      */
     public static void apply(ServerPlayer player, PlayerRpgData data) {
         double strength = effectiveAttributePoints(data.strength());
@@ -75,7 +66,6 @@ public final class RpgGameplayEffects {
         replaceModifier(player, Attributes.MOVEMENT_SPEED, SPEED_ID,
                 speed * SPEED_PER_ROOT_POINT, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
-        // A lower maximum health after a reset must not leave current health above the cap.
         player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
     }
 
@@ -106,9 +96,12 @@ public final class RpgGameplayEffects {
             return;
         }
 
-        instance.removeModifier(id);
-        if (amount > 0.0D) {
-            instance.addTransientModifier(new AttributeModifier(id, amount, operation));
+        if (amount <= 0.0D) {
+            instance.removeModifier(id);
+            return;
         }
+
+        // NeoForge/Minecraft 1.21.1 provides an explicit replace-or-add API.
+        instance.addOrUpdateTransientModifier(new AttributeModifier(id, amount, operation));
     }
 }
