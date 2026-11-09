@@ -19,10 +19,10 @@ public final class RpgCoreMod {
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerRespawn);
 
-        // Register the gameplay hooks explicitly so their server-side execution
-        // does not depend on automatic event-subscriber discovery.
+        // Explicit server-side registration for progression and gameplay hooks.
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onVanillaLevelChange);
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onPlayerJump);
+        NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onPlayerDamage);
         NeoForge.EVENT_BUS.addListener(RpgProgressionEvents::onPlayerTick);
     }
 }

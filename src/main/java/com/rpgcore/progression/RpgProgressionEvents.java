@@ -3,6 +3,7 @@ package com.rpgcore.progression;
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerRpgData;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -26,10 +27,18 @@ public final class RpgProgressionEvents {
     }
 
     /**
-     * Reapply the expected modifiers once per second. This is an idempotent
-     * safety net for login/respawn timing and other systems that may replace
-     * the player's attribute instances after the initial allocation update.
+     * Defense reduction is applied after vanilla armor and enchantment handling,
+     * so it also protects against damage types that bypass the armor attribute.
      */
+    public static void onPlayerDamage(LivingDamageEvent.Pre event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            PlayerRpgData data = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+            float multiplier = RpgGameplayEffects.damageMultiplier(data.defense());
+            event.setNewDamage(event.getNewDamage() * multiplier);
+        }
+    }
+
+    /** Refresh saved modifiers once per second on the authoritative server. */
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player && player.tickCount % 20 == 0) {
             RpgProgressionService.refreshGameplayEffects(player);

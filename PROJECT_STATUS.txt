@@ -6,41 +6,46 @@ Target:
 - Java 21
 
 Implemented:
-- RPG level mirrors the vanilla player experience level.
-- Attribute points are based on the highest vanilla level ever reached, so spending vanilla levels does not revoke earned points.
-- Exactly seven assignable attributes: Strength, Health, Defense, Mining Speed, Luck, Speed, and Jump Height.
-- Agreed cumulative attribute-point formula remains unchanged.
-- Free attribute reset.
-- Server-authoritative attribute allocation and reset.
-- Per-player attachment persistence and UUID-checked client sync.
-- P-key attribute screen with English and Simplified Chinese localization.
-- Removed diagnostic counter UI/network payload and separate RPG XP progression.
-- First-pass gameplay effects for all seven attributes.
-- Gameplay events are registered explicitly by the mod entry point.
-- Server refreshes the player's transient attribute modifiers every 20 ticks from saved RPG data.
-- Jump Height modifies upward velocity on both the local client prediction and logical server player jump event.
+- RPG level mirrors vanilla player experience level.
+- Attribute points use the agreed cumulative formula and are preserved when vanilla levels are spent.
+- Exactly seven attributes: Strength, Health, Defense, Mining Speed, Luck, Speed, and Jump Height.
+- Free reset, server-authoritative allocation, per-player persistence, UUID-checked sync.
+- P-key attribute GUI with Simplified Chinese and English.
+- True soft-cap curve: first 25 points are linear; later points use logarithmic diminishing returns without a hard point cap.
+- The same uniquely identified attribute modifiers are installed on server and owning client.
+- Jump Height adjusts local client prediction and server-side player jump velocity.
+- Defense applies a final damage reduction after vanilla armor/enchantment reductions, including damage types that bypass armor.
+- Defense also reduces burning duration and explosion knockback.
+- Mining Speed affects both overall block-break speed and mining efficiency when using a suitable tool.
 
-Updated prototype tuning values (subject to playtesting):
-- Strength: +0.75 attack damage per square-root attribute point.
-- Health: +1.50 maximum health per square-root attribute point.
-- Defense: +0.75 armor per square-root attribute point.
-- Mining Speed: +2% block-break speed per square-root attribute point.
-- Luck: +0.10 vanilla luck per square-root attribute point.
-- Speed: +1% movement speed per square-root attribute point.
-- Jump Height: +2% upward jump velocity per square-root attribute point.
-- Each attribute's effect input is capped at 10,000 points and uses square-root scaling.
-- Current RPG level does not grant separate automatic health or armor bonuses; level progression awards attribute points according to the agreed formula.
+Effect tuning per effective point:
+- Strength: +0.75 attack damage.
+- Health: +1.0 maximum health.
+- Defense: +0.60 armor (modifier capped at +30), plus a soft-capped all-damage reduction approaching 65%, burning-time reduction approaching 60%, and explosion knockback resistance approaching 70%.
+- Mining Speed: +5% block-break speed and +0.75 mining efficiency.
+- Luck: +0.50 vanilla Luck attribute.
+- Speed: +3% movement speed.
+- Jump Height: +2.5% upward jump velocity.
+
+Soft-cap function:
+- E(p) = p when p <= 25.
+- E(p) = 25 + 15 * ln(1 + (p - 25) / 15) when p > 25.
+- There is no 10,000-point hard cap; late investment continues to add diminishing returns.
+
+Notes:
+- Vanilla Luck only affects loot tables/mechanics that actually read the player's Luck value.
+- Defense's extra final-damage reduction is applied after the vanilla armor/enchantment stage.
+- The agreed level reward formula is unchanged.
 
 Legacy data upgrade:
-- Previously allocated Strength points are retained.
-- Allocations in the removed prototype attributes (Agility, Constitution, Intelligence, Spirit) are refunded to the available point pool.
-- Current level, highest reached level, and the earned-point formula are retained.
+- Previously allocated Strength is retained.
+- Removed prototype allocations (Agility, Constitution, Intelligence, Spirit) are refunded.
+- Current level, historical highest level, and total earned points remain.
 
 Not implemented:
-- Final balancing of the seven first-pass values.
-- Exploration, quests, gathering-specific rewards, monster scaling, equipment, or loot systems.
-- Full multiplayer and compatibility testing with other attribute-modifying mods.
+- Final balancing after in-game playtesting.
+- Exploration, quests, gathering rewards, monster scaling, equipment, or loot systems.
+- Full compatibility testing with other gameplay mods and multiplayer stress testing.
 
 Validation required:
-- GitHub Actions build and in-game testing for this revision.
-- Verify all seven attribute effects, reset, level spending, login/respawn persistence, and multiplayer isolation.
+- GitHub Actions build and in-game tests for all seven effects, reset, level spending, login/respawn persistence, and multiplayer isolation.

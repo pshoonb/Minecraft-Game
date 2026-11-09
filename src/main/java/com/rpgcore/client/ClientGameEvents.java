@@ -22,11 +22,7 @@ public final class ClientGameEvents {
         ClientRpgDataCache.clear();
     }
 
-    /**
-     * Apply jump height during local prediction as well as on the server.
-     * The server-side velocity alone is not enough to change the jump the
-     * owning client predicts and renders immediately.
-     */
+    /** Apply jump height during local prediction as well as on the server. */
     @SubscribeEvent
     public static void onLocalPlayerJump(LivingEvent.LivingJumpEvent event) {
         if (event.getEntity() instanceof LocalPlayer player && ClientRpgDataCache.hasServerData()) {
@@ -35,10 +31,19 @@ public final class ClientGameEvents {
         }
     }
 
+    /**
+     * Keep the owning client's attributes in sync with the authoritative
+     * snapshot as well. Stable modifier IDs make this safe to repeat.
+     */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null && ClientRpgDataCache.hasServerData()
+                && minecraft.player.tickCount % 20 == 0) {
+            RpgGameplayEffects.apply(minecraft.player, ClientRpgDataCache.get());
+        }
+
         while (ClientModBusEvents.OPEN_RPG_MENU.consumeClick()) {
-            Minecraft minecraft = Minecraft.getInstance();
             if (minecraft.player != null && minecraft.screen == null) {
                 minecraft.setScreen(new RpgDataScreen());
             }
