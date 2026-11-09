@@ -18,16 +18,16 @@ Implemented:
 - First-pass gameplay effects for all seven attributes.
 - Gameplay events are registered explicitly by the mod entry point.
 - Server refreshes the player's transient attribute modifiers every 20 ticks from saved RPG data.
-- Jump Height modifies the upward velocity of actual player jumps.
+- Jump Height modifies upward velocity on both the local client prediction and logical server player jump event.
 
 Updated prototype tuning values (subject to playtesting):
-- Strength: +0.50 attack damage per square-root attribute point.
-- Health: +1.00 maximum health per square-root attribute point.
-- Defense: +0.50 armor per square-root attribute point.
-- Mining Speed: +1% block-break speed per square-root attribute point.
+- Strength: +0.75 attack damage per square-root attribute point.
+- Health: +1.50 maximum health per square-root attribute point.
+- Defense: +0.75 armor per square-root attribute point.
+- Mining Speed: +2% block-break speed per square-root attribute point.
 - Luck: +0.10 vanilla luck per square-root attribute point.
-- Speed: +0.5% movement speed per square-root attribute point.
-- Jump Height: +1% upward jump velocity per square-root attribute point.
+- Speed: +1% movement speed per square-root attribute point.
+- Jump Height: +2% upward jump velocity per square-root attribute point.
 - Each attribute's effect input is capped at 10,000 points and uses square-root scaling.
 - Current RPG level does not grant separate automatic health or armor bonuses; level progression awards attribute points according to the agreed formula.
 
