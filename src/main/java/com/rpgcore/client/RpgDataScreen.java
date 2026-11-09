@@ -3,7 +3,6 @@ package com.rpgcore.client;
 import com.rpgcore.data.PlayerRpgData;
 import com.rpgcore.network.IncrementDiagnosticPayload;
 import com.rpgcore.network.RequestRpgDataPayload;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
@@ -23,13 +22,10 @@ public final class RpgDataScreen extends Screen {
     private final StringWidget[] statNameLabels = new StringWidget[STAT_NAMES.length];
     private final StringWidget[] statValueLabels = new StringWidget[STAT_NAMES.length];
 
-    private StringWidget titleLabel;
-    private StringWidget subtitleLabel;
     private StringWidget waitingLabel;
     private StringWidget pointsLabel;
     private StringWidget historyLabel;
     private StringWidget counterLabel;
-    private StringWidget uuidLabel;
 
     public RpgDataScreen() {
         super(Component.translatable("screen.rpgcore.title"));
@@ -51,11 +47,11 @@ public final class RpgDataScreen extends Screen {
 
         // Render every text line as a vanilla StringWidget, just like the working
         // button uses vanilla widget rendering, instead of drawing text directly.
-        this.titleLabel = addTextLabel(
+        addTextLabel(
                 panelLeft + 7, panelTop + 14, panelWidth - 14, 10,
                 this.title, 0xFFFFD778, true
         );
-        this.subtitleLabel = addTextLabel(
+        addTextLabel(
                 panelLeft + 7, panelTop + 28, panelWidth - 14, 10,
                 Component.translatable("screen.rpgcore.subtitle"), 0xFFD5CBBB, true
         );
@@ -90,15 +86,10 @@ public final class RpgDataScreen extends Screen {
                 textX, textY + 148, textWidth, 10,
                 Component.empty(), 0xFF9AF0B2, false
         );
-        this.uuidLabel = addTextLabel(
-                textX, panelTop + 190, textWidth, 10,
-                Component.empty(), 0xFFBEB7AB, false
-        );
 
         this.pointsLabel.visible = false;
         this.historyLabel.visible = false;
         this.counterLabel.visible = false;
-        this.uuidLabel.visible = false;
 
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
@@ -162,12 +153,6 @@ public final class RpgDataScreen extends Screen {
             this.counterLabel.setMessage(Component.literal(
                     "Persistence Test Counter: " + data.diagnosticCounter()
             ));
-        }
-
-        var player = Minecraft.getInstance().player;
-        this.uuidLabel.visible = player != null;
-        if (player != null) {
-            this.uuidLabel.setMessage(Component.literal("Player UUID: " + player.getUUID()));
         }
 
         // Vanilla widgets render after the panel fill, keeping every line on the
