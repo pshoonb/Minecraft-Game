@@ -30,9 +30,13 @@ public final class RpgProgressionService {
             NetworkHandler.sendSnapshot(player);
         }
 
-        // Always rebuild transient effects: this also restores them after respawn
-        // and ensures existing worlds receive effects immediately after updating.
         RpgGameplayEffects.apply(player, updated);
+    }
+
+    /** Rebuilds transient modifiers from the player's authoritative saved data. */
+    public static void refreshGameplayEffects(ServerPlayer player) {
+        PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        RpgGameplayEffects.apply(player, current);
     }
 
     public static void allocateAttribute(ServerPlayer player, PlayerAttribute attribute, int amount) {
