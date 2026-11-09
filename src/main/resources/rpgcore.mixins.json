@@ -5,7 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "LootItemRandomChanceConditionMixin",
-    "LootItemRandomChanceWithEnchantedBonusConditionMixin"
+    "LootItemRandomChanceWithEnchantedBonusConditionMixin",
+    "LootPoolMixin"
   ],
   "injectors": {
     "defaultRequire": 1

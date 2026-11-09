@@ -53,9 +53,20 @@
 - [ ] Existing orbs with different denominations are unchanged.
 - [ ] Other entities' later XP drops are independently calculated using only their own participant snapshots.
 - [ ] Ender Dragon's multiple XP award batches are all processed separately and retain their vanilla timing.
-- [ ] Entities with zero XP do not create XP through Experience Loot.
+- [ ] Entities with zero XP do not create orbs through Experience Loot.
 - [ ] Mining, smelting, and other non-LivingExperienceDropEvent XP sources remain unchanged.
 - [ ] Entity tracking data is cleared when the living entity leaves its level.
+
+## Luck loot coverage
+- [ ] With 0 Luck, player-caused mob loot matches vanilla pool rolls and random-chance predicates.
+- [ ] With Luck, each eligible living-entity pool with a positive configured base roll count has at most one additional roll; its chance is min(100%, the cumulative Luck percentage).
+- [ ] The additional roll uses the same vanilla weighted selection; entry weights and relative weight proportions are unchanged.
+- [ ] A guaranteed one-entry pool still produces its ordinary guaranteed drop, and may produce one more copy when the extra roll succeeds.
+- [ ] Pool and entry conditions are still evaluated by vanilla for the additional roll.
+- [ ] Vanilla random_chance and random_chance_with_enchanted_bonus predicates receive the relative Luck probability multiplier, including during the additional roll.
+- [ ] Direct player kills and player-owned projectile kills both resolve the correct player's Luck.
+- [ ] Loot contexts without a resolvable player attacker receive no custom Luck pool bonus.
+- [ ] Worn-equipment drop chances still use the Luck percentage modifier.
 
 ## Follow-up gameplay tests
 - [ ] Strength affects attack damage along approved balance rules.
@@ -64,4 +75,4 @@
 - [ ] Mining Speed affects block breaking without client/server desynchronization.
 - [ ] Movement Speed works on land and in water, while sneaking, sprinting, flying and riding.
 - [ ] Jump Height works with the vanilla Jump Boost effect.
-- [ ] Luck affects the approved loot/drop paths without duplicate rewards.
+- [ ] Luck's ore, chance-predicate, weighted-pool and deterministic-entry behavior produces no unintended duplicate rewards.

@@ -22,7 +22,8 @@ Implemented in source:
 - Movement Speed uses a transient multiplicative-base movement-speed modifier.
 - Jump Height adds launch velocity corresponding to the cumulative height formula.
 - Luck adds 1-15 extra items to eligible ore-block drops. Base weights are 150, 145, ... 80; the weight exponent flattens with current Luck so larger quantities become relatively more likely.
-- Luck multiplies ordinary mob loot random-chance conditions and worn-equipment drop chances by its cumulative percentage formula. The probability hook scales only random-chance rolls, leaving item counts and loot-table weights unchanged.
+- Luck multiplies player-caused living-entity loot random-chance and random-chance-with-enchanted-bonus conditions by its cumulative percentage formula. Each eligible living-entity loot pool with at least one configured base roll also has at most one additional weighted roll, independently granted with chance min(100%, LuckBonusPercent). The additional roll uses the original pool entries and weights, preserving their relative proportions. Deterministic entries and conditions remain active on their normal roll and can be selected again by the additional roll.
+- Worn-equipment drop chances are multiplied by the same cumulative Luck percentage formula.
 - Experience Loot reuses the Mining Speed cumulative percentage formula.
 - Each LivingExperienceDropEvent batch uses the agreed per-orb denomination calculation:
   T' = floor(T * (1 + bonusPercent / 100))
@@ -34,7 +35,7 @@ Implemented in source:
 - Nearby pre-existing XP orbs are not searched or rewritten; multi-batch XP drops are processed separately.
 
 Limitations / not yet implemented:
-- Luck affects vanilla random-chance and random-chance-with-enchanted-bonus conditions in living-entity loot tables, plus worn-equipment drop chances. Loot-table conditions that do not use these chance predicates (for example, deterministic predicates or custom mod-specific logic) are not rewritten.
+- Luck's loot-pool and deterministic-entry coverage is scoped to player-caused living-entity loot contexts. Pools with zero configured base rolls do not receive the extra roll. The extra roll does not alter pool conditions, entry weights, item counts, or loot functions.
 - No dedicated in-game balance test has been run; the build and a multiplayer play test are still required.
 - Exploration, quest, gathering, monster scaling, equipment and loot systems remain out of scope.
 
@@ -42,7 +43,6 @@ Implementation notes:
 - Cumulative sums use exact evaluation for the first 8,192 points and short midpoint intervals thereafter to avoid unbounded work for high-level characters.
 - Defense's 80% soft cap uses 80 * (1 - exp(-rawReduction / 80)).
 - Player modifiers are transient and reapplied on login and respawn from persistent RPG attachment data.
-
 
 User-provided marginal attribute formulas (x is the current number of points allocated to that attribute):
 - Strength: f(x) = 2 / x; cumulative result is flat Minecraft damage points.
@@ -52,11 +52,10 @@ User-provided marginal attribute formulas (x is the current number of points all
 - Movement Speed: same marginal formula as Mining Speed, applied as a percentage.
 - Jump Height: f(x) = 1 / ln(0.5*x + e - 0.5), as additional jump height.
 - Luck: mineral extra-drop amounts are 1-15, using dynamic descending weights based on the base vector [150, 145, 140, 135, 130, 125, 120, 115, 110, 105, 100, 95, 90, 85, 80]. Higher Luck flattens the distribution, relatively favoring larger quantities.
-- Luck's creature equipment-drop probability bonus reuses the Mining Speed cumulative percentage formula.
+- Luck's creature equipment-drop and living-entity loot probability bonuses reuse the Mining Speed cumulative percentage formula.
 - Experience Loot reuses the Mining Speed cumulative percentage formula.
 
 Luck probability implementation detail:
-- For living-entity loot contexts with a player attacker (including player-owned projectiles), Luck applies the same cumulative Mining Speed percentage bonus to vanilla random-chance predicates and random-chance-with-enchanted-bonus predicates.
-- The chance adjustment is mathematically equivalent to multiplying the predicate's existing probability by (1 + LuckBonusPercent / 100), capped by the predicate's natural 100% maximum.
-- Random-chance-with-enchanted-bonus is adjusted after its vanilla Looting-based chance has been calculated, so Looting and Luck remain independent.
-- The implementation does not change deterministic loot conditions, weighted-entry selection weights, or item counts.
+- For player-caused living-entity loot contexts (including player-owned projectiles), Luck applies the same cumulative Mining Speed percentage bonus to vanilla random-chance predicates and random-chance-with-enchanted-bonus predicates.
+- The chance adjustment is mathematically equivalent to multiplying the predicate's existing probability by (1 + LuckBonusPercent / 100), capped by the predicate's natural 100% maximum. The enchanted-bonus predicate is adjusted after vanilla's Looting-based chance is calculated, so Looting and RPG Luck remain independent.
+- Each eligible living-entity LootPool receives at most one extra vanilla weighted-selection roll, with probability min(100%, LuckBonusPercent), when its configured base roll count is positive. No entry weight or relative weight is rewritten; deterministic entries still execute normally and may be selected again during the additional roll.
