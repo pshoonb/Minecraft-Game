@@ -1,5 +1,6 @@
 package com.rpgcore;
 
+import com.rpgcore.combat.CombatParticipationTracker;
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.network.NetworkHandler;
 import com.rpgcore.network.PlayerSyncEvents;
@@ -17,5 +18,8 @@ public final class RpgCoreMod {
 
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerRespawn);
+        NeoForge.EVENT_BUS.addListener(CombatParticipationTracker::onLivingDamage);
+        NeoForge.EVENT_BUS.addListener(CombatParticipationTracker::onExperienceDrop);
+        NeoForge.EVENT_BUS.addListener(CombatParticipationTracker::onServerTick);
     }
 }
