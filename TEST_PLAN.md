@@ -28,7 +28,7 @@
 
 ## Experience-orb denomination calculation
 - [ ] Vanilla denomination counting uses 2477, 1237, 617, 307, 149, 73, 37, 17, 7, 3, 1 in descending greedy order.
-- [ ] For S=6, N=3; for S=10, N=4; for S=960, the count matches vanilla's denomination split.
+- [ ] For S=6, N=2 (3+3); for S=10, N=2 (7+3); for S=960, N=6 (617+307+17+17+1+1).
 - [ ] P is floor(S * (1 + 2% * L)).
 - [ ] Q is P // (max(2, N) - 1).
 - [ ] Every logical orb in the batch gets denomination Q; the logical orb count remains N.
