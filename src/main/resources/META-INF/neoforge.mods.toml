@@ -7,7 +7,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="RPG Core Project"
-description='''An RPG progression prototype with separate player levels, experience, and freely assignable attributes.'''
+description='''An RPG progression prototype with vanilla-linked player levels and freely assignable attributes.'''
 
 [[dependencies.${mod_id}]]
 modId="neoforge"
