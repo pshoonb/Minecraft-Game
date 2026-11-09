@@ -15,10 +15,11 @@ public record PlayerRpgData(
         long constitution,
         long intelligence,
         long spirit,
+        long experienceLoot,
         boolean progressionInitialized
 ) {
     public static final PlayerRpgData EMPTY =
-            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, false);
+            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, 0L, false);
 
     public static final Codec<PlayerRpgData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.optionalFieldOf("rpg_level", 0).forGetter(PlayerRpgData::rpgLevel),
@@ -28,6 +29,7 @@ public record PlayerRpgData(
             Codec.LONG.optionalFieldOf("constitution", 0L).forGetter(PlayerRpgData::constitution),
             Codec.LONG.optionalFieldOf("intelligence", 0L).forGetter(PlayerRpgData::intelligence),
             Codec.LONG.optionalFieldOf("spirit", 0L).forGetter(PlayerRpgData::spirit),
+            Codec.LONG.optionalFieldOf("experience_loot", 0L).forGetter(PlayerRpgData::experienceLoot),
             Codec.BOOL.optionalFieldOf("progression_initialized", false).forGetter(PlayerRpgData::progressionInitialized)
     ).apply(instance, PlayerRpgData::new));
 
@@ -43,6 +45,7 @@ public record PlayerRpgData(
         constitution = nonNegative(constitution);
         intelligence = nonNegative(intelligence);
         spirit = nonNegative(spirit);
+        experienceLoot = nonNegative(experienceLoot);
     }
 
     private static int clampLevel(int level) {
@@ -55,13 +58,13 @@ public record PlayerRpgData(
         // when upgrading from the earlier prototype.
         int previousBaseline = Math.max(rpgLevel, highestLevelReached);
         return new PlayerRpgData(safeLevel, Math.max(previousBaseline, safeLevel),
-                strength, agility, constitution, intelligence, spirit, true);
+                strength, agility, constitution, intelligence, spirit, experienceLoot, true);
     }
 
     public PlayerRpgData withVanillaLevel(int vanillaLevel) {
         int safeLevel = clampLevel(vanillaLevel);
         return new PlayerRpgData(safeLevel, Math.max(highestLevelReached, safeLevel),
-                strength, agility, constitution, intelligence, spirit, true);
+                strength, agility, constitution, intelligence, spirit, experienceLoot, true);
     }
 
     public long allocatedAttributePoints() {
@@ -70,7 +73,8 @@ public record PlayerRpgData(
         total = saturatedAdd(total, agility);
         total = saturatedAdd(total, constitution);
         total = saturatedAdd(total, intelligence);
-        return saturatedAdd(total, spirit);
+        total = saturatedAdd(total, spirit);
+        return saturatedAdd(total, experienceLoot);
     }
 
     /** Attribute rewards are based on the highest vanilla level ever reached. */
@@ -89,6 +93,7 @@ public record PlayerRpgData(
             case CONSTITUTION -> constitution;
             case INTELLIGENCE -> intelligence;
             case SPIRIT -> spirit;
+            case EXPERIENCE_LOOT -> experienceLoot;
         };
     }
 
@@ -96,20 +101,21 @@ public record PlayerRpgData(
         if (amount <= 0L) return this;
         long next = saturatedAdd(valueOf(attribute), amount);
         return switch (attribute) {
-            case STRENGTH -> withAttributes(next, agility, constitution, intelligence, spirit);
-            case AGILITY -> withAttributes(strength, next, constitution, intelligence, spirit);
-            case CONSTITUTION -> withAttributes(strength, agility, next, intelligence, spirit);
-            case INTELLIGENCE -> withAttributes(strength, agility, constitution, next, spirit);
-            case SPIRIT -> withAttributes(strength, agility, constitution, intelligence, next);
+            case STRENGTH -> withAttributes(next, agility, constitution, intelligence, spirit, experienceLoot);
+            case AGILITY -> withAttributes(strength, next, constitution, intelligence, spirit, experienceLoot);
+            case CONSTITUTION -> withAttributes(strength, agility, next, intelligence, spirit, experienceLoot);
+            case INTELLIGENCE -> withAttributes(strength, agility, constitution, next, spirit, experienceLoot);
+            case SPIRIT -> withAttributes(strength, agility, constitution, intelligence, next, experienceLoot);
+            case EXPERIENCE_LOOT -> withAttributes(strength, agility, constitution, intelligence, spirit, next);
         };
     }
 
     public PlayerRpgData resetAttributes() {
-        return withAttributes(0L, 0L, 0L, 0L, 0L);
+        return withAttributes(0L, 0L, 0L, 0L, 0L, 0L);
     }
 
-    private PlayerRpgData withAttributes(long s, long a, long c, long i, long sp) {
-        return new PlayerRpgData(rpgLevel, highestLevelReached, s, a, c, i, sp, progressionInitialized);
+    private PlayerRpgData withAttributes(long s, long a, long c, long i, long sp, long expLoot) {
+        return new PlayerRpgData(rpgLevel, highestLevelReached, s, a, c, i, sp, expLoot, progressionInitialized);
     }
 
     private static long nonNegative(long value) { return Math.max(0L, value); }
@@ -126,11 +132,12 @@ public record PlayerRpgData(
         b.writeLong(d.constitution);
         b.writeLong(d.intelligence);
         b.writeLong(d.spirit);
+        b.writeLong(d.experienceLoot);
         b.writeBoolean(d.progressionInitialized);
     }
 
     private static PlayerRpgData readFromBuffer(ByteBuf b) {
         return new PlayerRpgData(b.readInt(), b.readInt(), b.readLong(), b.readLong(),
-                b.readLong(), b.readLong(), b.readLong(), b.readBoolean());
+                b.readLong(), b.readLong(), b.readLong(), b.readLong(), b.readBoolean());
     }
 }
