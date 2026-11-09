@@ -18,13 +18,15 @@ public final class RpgDataScreen extends Screen {
     private static final int PANEL_HEIGHT = 300;
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
 
+    private final Screen parentScreen;
     private final StringWidget[] valueLabels = new StringWidget[ATTRIBUTES.length];
     private StringWidget levelLabel;
     private StringWidget pointsLabel;
     private StringWidget waitingLabel;
 
-    public RpgDataScreen() {
+    public RpgDataScreen(Screen parentScreen) {
         super(Component.translatable("screen.rpgcore.title"));
+        this.parentScreen = parentScreen;
     }
 
     @Override
@@ -103,6 +105,13 @@ public final class RpgDataScreen extends Screen {
             }
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    public void onClose() {
+        if (minecraft != null) {
+            minecraft.setScreen(parentScreen);
+        }
     }
 
     @Override
