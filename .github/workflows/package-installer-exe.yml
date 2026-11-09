@@ -58,7 +58,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $installer = 'neoforge-21.1.265-installer.jar'
+          $installer = (Resolve-Path 'neoforge-21.1.265-installer.jar').Path
           python -m PyInstaller --noconfirm --clean --onefile --windowed --name 'RPG-Core-Installer' --add-data "$installer;." --distpath 'dist' --workpath 'build/pyinstaller' --specpath 'build/pyinstaller' 'RPG_Core_一键安装_自动更新版.py'
           $exe = 'dist/RPG-Core-Installer.exe'
           if (-not (Test-Path $exe) -or (Get-Item $exe).Length -lt 1000000) {

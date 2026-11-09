@@ -60,7 +60,7 @@ if errorlevel 1 (
 )
 
 echo Building the one-file Windows installer...
-%PYTHON% -m PyInstaller --noconfirm --clean --onefile --windowed --name "RPG-Core-Installer" --add-data "%NEOFORGE_INSTALLER%;." --distpath "%~dp0dist" --workpath "%~dp0build\pyinstaller" --specpath "%~dp0build\pyinstaller" "%SCRIPT%"
+%PYTHON% -m PyInstaller --noconfirm --clean --onefile --windowed --name "RPG-Core-Installer" --add-data "%CD%\%NEOFORGE_INSTALLER%;." --distpath "%~dp0dist" --workpath "%~dp0build\pyinstaller" --specpath "%~dp0build\pyinstaller" "%SCRIPT%"
 if errorlevel 1 (
     echo EXE packaging failed.
     pause
