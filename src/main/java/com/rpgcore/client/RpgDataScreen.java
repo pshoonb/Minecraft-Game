@@ -93,8 +93,7 @@ public final class RpgDataScreen extends Screen {
         if (hasData) {
             PlayerRpgData data = ClientRpgDataCache.get();
             levelLabel.setMessage(Component.literal("RPG Level: " + data.rpgLevel()));
-            xpLabel.setMessage(Component.literal("RPG Experience: " + data.experienceProgress()
-                    + " / " + safeRequired(data.rpgLevel())));
+            xpLabel.setMessage(Component.literal("RPG XP Progress: " + data.experienceProgress()));
             pointsLabel.setMessage(Component.literal("Available Points: "
                     + data.availableAttributePoints() + "   Total Earned: " + data.totalAttributePoints()));
 
@@ -108,9 +107,6 @@ public final class RpgDataScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private static long safeRequired(int level) {
-        return com.rpgcore.progression.RpgProgression.experienceRequiredForNextLevel(level);
-    }
 
     @Override
     public boolean isPauseScreen() {
