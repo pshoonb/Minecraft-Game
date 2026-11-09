@@ -5,6 +5,7 @@ import shutil
 import hashlib
 import zipfile
 import subprocess
+import sys
 import urllib.request
 import tkinter as tk
 
@@ -25,6 +26,12 @@ MOD_JAR_PREFIX = "rpgcore-"
 # Public GitHub Releases channel. No GitHub token is needed by players.
 GITHUB_RELEASE_API = (
     "https://api.github.com/repos/pshoonb/Minecraft-Game/releases/latest"
+)
+
+# Installer source used for the optional manual self-update check.
+INSTALLER_UPDATE_URL = (
+    "https://raw.githubusercontent.com/pshoonb/Minecraft-Game/main/"
+    "RPG_Core_%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85_%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0%E7%89%88.py"
 )
 
 INSTALLER_NAME = f"neoforge-{NEOFORGE_VERSION}-installer.jar"
@@ -200,6 +207,117 @@ def show_error(text):
 
 def show_info(text):
     messagebox.showinfo(APP_NAME, text)
+
+
+def check_installer_update():
+    """
+    检查 GitHub 上的安装器源码是否与本地不同。
+    用户可以选择同步更新或继续使用当前版本。
+    更新成功后备份旧文件并重新启动新版安装器。
+    """
+    installer_path = Path(__file__).resolve()
+    temporary_path = installer_path.with_name(
+        installer_path.name + ".update-download"
+    )
+
+    try:
+        request = urllib.request.Request(
+            INSTALLER_UPDATE_URL,
+            headers={"User-Agent": "RPG-Core-Installer"}
+        )
+
+        with urllib.request.urlopen(request, timeout=20) as response:
+            remote_bytes = response.read(5 * 1024 * 1024 + 1)
+
+        if not remote_bytes or len(remote_bytes) > 5 * 1024 * 1024:
+            raise RuntimeError("GitHub 返回的安装器文件为空或超过 5 MB。")
+
+        local_bytes = installer_path.read_bytes()
+
+        if remote_bytes == local_bytes:
+            print("安装器已是 GitHub 当前版本。", flush=True)
+            return False
+
+        local_hash = hashlib.sha256(local_bytes).hexdigest()
+        remote_hash = hashlib.sha256(remote_bytes).hexdigest()
+
+        should_update = messagebox.askyesno(
+            APP_NAME,
+            "检测到 GitHub 上的安装器与本地文件不同。\\n\\n"
+            f"本地 SHA-256：{local_hash[:16]}...\\n"
+            f"GitHub SHA-256：{remote_hash[:16]}...\\n\\n"
+            "同步更新会覆盖当前 Python 安装器文件；"
+            "更新前会自动备份当前文件。\\n\\n"
+            "选择“是”：下载并同步更新，随后自动重新启动。\\n"
+            "选择“否”：保留当前文件，继续执行本次安装。"
+        )
+
+        if not should_update:
+            print("用户选择继续使用当前安装器版本。", flush=True)
+            return False
+
+        # 在覆盖本地文件前，先检查远端源码能否通过 Python 语法编译。
+        compile(remote_bytes, str(installer_path), "exec")
+
+        temporary_path.write_bytes(remote_bytes)
+        if file_hash(temporary_path) != remote_hash:
+            raise RuntimeError("安装器下载文件校验失败。")
+
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup_path = installer_path.with_name(
+            installer_path.name + ".backup-" + timestamp
+        )
+
+        counter = 1
+        while backup_path.exists():
+            backup_path = installer_path.with_name(
+                installer_path.name
+                + ".backup-"
+                + timestamp
+                + "-"
+                + str(counter)
+            )
+            counter += 1
+
+        shutil.copy2(installer_path, backup_path)
+        os.replace(temporary_path, installer_path)
+
+        show_info(
+            "安装器已同步更新！\\n\\n"
+            "旧版备份：\\n"
+            + str(backup_path)
+            + "\\n\\n点击“确定”后将自动重新启动新版安装器。"
+        )
+
+        try:
+            subprocess.Popen(
+                [sys.executable, str(installer_path)],
+                cwd=str(BASE_DIR),
+                close_fds=True
+            )
+        except Exception as exc:
+            show_error(
+                "新版文件已更新，但无法自动重新启动。\\n\\n"
+                f"原因：{exc}\\n\\n"
+                "请关闭当前窗口，再双击新版 Python 安装器运行。"
+            )
+
+        return True
+
+    except Exception as exc:
+        temporary_path.unlink(missing_ok=True)
+        messagebox.showwarning(
+            APP_NAME,
+            "检查或同步安装器更新时遇到问题。\\n\\n"
+            f"原因：{exc}\\n\\n"
+            "将保留当前安装器并继续原有安装流程。"
+        )
+        print("安装器更新检查失败，继续使用本地版本：", exc, flush=True)
+        return False
+
+
+# =====================================================
+# FILE HASH / JAR VALIDATION
 
 
 # =====================================================
@@ -949,6 +1067,10 @@ def main():
 
     if os.name != "nt":
         raise RuntimeError("此安装器目前只支持 Windows。")
+
+    # 启动时提供可选的安装器同步更新；用户拒绝或网络失败均继续旧版。
+    if check_installer_update():
+        return
 
     print("=" * 55)
     print("RPG CORE ONE CLICK INSTALLER")
