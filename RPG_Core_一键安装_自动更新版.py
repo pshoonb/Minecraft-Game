@@ -11,7 +11,7 @@ import tkinter as tk
 
 from pathlib import Path
 from datetime import datetime
-from tkinter import messagebox, filedialog
+from tkinter import filedialog
 
 # =====================================================
 # RPG CORE ONE CLICK INSTALLER
@@ -137,8 +137,7 @@ def choose_game_directory(default_dir: Path):
         raw_path = path_var.get().strip().strip('"')
 
         if not raw_path:
-            messagebox.showerror(
-                APP_NAME,
+            show_error(
                 "The game directory cannot be empty.",
                 parent=window
             )
@@ -147,16 +146,14 @@ def choose_game_directory(default_dir: Path):
         selected = Path(raw_path).expanduser()
 
         if selected.exists() and not selected.is_dir():
-            messagebox.showerror(
-                APP_NAME,
+            show_error(
                 "The selected path is not a folder. Please choose another path.",
                 parent=window
             )
             return
 
         if not selected.exists():
-            create_it = messagebox.askyesno(
-                APP_NAME,
+            create_it = ask_yes_no(
                 "This folder does not exist yet:\n\n"
                 f"{selected}\n\n"
                 "This folder will be created during installation. Do you want to use this path?",
@@ -201,12 +198,118 @@ def choose_game_directory(default_dir: Path):
     return result["path"]
 
 
-def show_error(text):
-    messagebox.showerror(APP_NAME, text)
+def _show_dialog(text, buttons, default_value=False, parent=None):
+    """Display a modal dialog with application-controlled English buttons."""
+
+    dialog = tk.Tk() if parent is None else tk.Toplevel(parent)
+    dialog.title(APP_NAME)
+    dialog.resizable(False, False)
+
+    result = {"value": default_value}
+
+    message_label = tk.Label(
+        dialog,
+        text=str(text),
+        font=("Segoe UI", 10),
+        justify="left",
+        anchor="w",
+        wraplength=560
+    )
+    message_label.pack(fill="both", expand=True, padx=20, pady=(20, 12))
+
+    button_frame = tk.Frame(dialog)
+    button_frame.pack(fill="x", padx=20, pady=(0, 16))
+
+    def finish(value):
+        result["value"] = value
+        try:
+            dialog.grab_release()
+        except tk.TclError:
+            pass
+        dialog.destroy()
+
+    # Reverse packing keeps the options in their natural left-to-right order.
+    for label, value in reversed(buttons):
+        button = tk.Button(
+            button_frame,
+            text=label,
+            width=12,
+            command=lambda selected=value: finish(selected),
+            default="active" if value == default_value else "normal"
+        )
+        button.pack(side="right", padx=(8, 0))
+        if value == default_value:
+            default_button = button
+
+    dialog.protocol("WM_DELETE_WINDOW", lambda: finish(default_value))
+    dialog.bind("<Escape>", lambda event: finish(default_value))
+    dialog.bind("<Return>", lambda event: finish(default_value))
+
+    if parent is not None:
+        dialog.transient(parent)
+
+    dialog.update_idletasks()
+    width = max(380, min(640, message_label.winfo_reqwidth() + 40))
+    height = message_label.winfo_reqheight() + 88
+
+    if parent is not None:
+        parent.update_idletasks()
+        x = parent.winfo_rootx() + max(0, (parent.winfo_width() - width) // 2)
+        y = parent.winfo_rooty() + max(0, (parent.winfo_height() - height) // 2)
+    else:
+        screen_width = dialog.winfo_screenwidth()
+        screen_height = dialog.winfo_screenheight()
+        x = max(0, (screen_width - width) // 2)
+        y = max(0, (screen_height - height) // 2)
+
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
+    dialog.grab_set()
+
+    try:
+        default_button.focus_set()
+    except UnboundLocalError:
+        pass
+
+    if parent is None:
+        dialog.mainloop()
+    else:
+        dialog.wait_window()
+
+    return result["value"]
 
 
-def show_info(text):
-    messagebox.showinfo(APP_NAME, text)
+def show_error(text, parent=None):
+    _show_dialog(text, [("OK", True)], default_value=True, parent=parent)
+
+
+def show_warning(text, parent=None):
+    _show_dialog(text, [("OK", True)], default_value=True, parent=parent)
+
+
+def show_info(text, parent=None):
+    _show_dialog(text, [("OK", True)], default_value=True, parent=parent)
+
+
+def ask_yes_no(text, parent=None):
+    return bool(
+        _show_dialog(
+            text,
+            [("Yes", True), ("No", False)],
+            default_value=False,
+            parent=parent
+        )
+    )
+
+
+def ask_ok_cancel(text, parent=None):
+    return bool(
+        _show_dialog(
+            text,
+            [("OK", True), ("Cancel", False)],
+            default_value=False,
+            parent=parent
+        )
+    )
 
 
 def check_installer_update():
@@ -241,8 +344,7 @@ def check_installer_update():
         local_hash = hashlib.sha256(local_bytes).hexdigest()
         remote_hash = hashlib.sha256(remote_bytes).hexdigest()
 
-        should_update = messagebox.askyesno(
-            APP_NAME,
+        should_update = ask_yes_no(
             "A different installer version was found on GitHub.\n\n"
             f"Local SHA-256: {local_hash[:16]}...\n"
             f"GitHub SHA-256: {remote_hash[:16]}...\n\n"
@@ -306,8 +408,7 @@ def check_installer_update():
 
     except Exception as exc:
         temporary_path.unlink(missing_ok=True)
-        messagebox.showwarning(
-            APP_NAME,
+        show_warning(
             "An error occurred while checking for or syncing the installer update.\n\n"
             f"Reason: {exc}\n\n"
             "The current installer will be kept, and the installation will continue."
@@ -570,8 +671,7 @@ def choose_mod_to_install(local_mod, state):
         )
 
         if fallback_mod:
-            messagebox.showwarning(
-                APP_NAME,
+            show_warning(
                 warning + "The locally available or currently installed mod version will be used."
             )
             return fallback_mod
@@ -612,14 +712,13 @@ def choose_mod_to_install(local_mod, state):
         "The downloaded file will be verified with SHA-256 before installation."
     )
 
-    should_update = messagebox.askyesno(APP_NAME, prompt)
+    should_update = ask_yes_no(prompt)
 
     if should_update:
         try:
             return download_release_mod(release)
         except Exception as exc:
-            messagebox.showwarning(
-                APP_NAME,
+            show_warning(
                 "The new version could not be downloaded or verified. Your existing mod file will not be deleted.\n\n"
                 f"Reason: {exc}\n\n"
                 + (
@@ -1098,8 +1197,7 @@ def main():
     print("Game directory: ", GAME_DIR, flush=True)
 
     # 3. 确认 TLauncher 已关闭。
-    response = messagebox.askokcancel(
-        APP_NAME,
+    response = ask_ok_cancel(
         "RPG Core is ready to be installed.\n\n"
         "Please close TLauncher and Minecraft before continuing.\n\n"
         "Installation directory:\n"
