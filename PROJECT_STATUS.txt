@@ -1,0 +1,23 @@
+RPG Core Prototype 0.1.0
+
+Target:
+- Minecraft Java Edition 1.21.1
+- NeoForge 21.1.265
+- Java 21 (64-bit)
+- ModDevGradle 2.0.148 / Gradle 9.2.1
+
+Implemented in source:
+- Mod entrypoint and side-specific networking registration
+- Persistent per-player Attachment with Codec serialization
+- copyOnDeath() configuration
+- Server-authoritative diagnostic counter increment
+- Client request / server response synchronization
+- Per-player UUID matching in the client cache
+- P-key diagnostic GUI
+- Client cache clear on logout
+
+Status: SOURCE PROJECT CREATED; NOT BUILT; NOT GAME-TESTED.
+Reason no JAR: this execution environment could not resolve external Maven/Gradle download hosts, and Gradle is not installed locally.
+
+Static checks performed: source tree review, JSON parse, Java brace sanity check, shell script syntax check.
+Not performed: Java compilation against NeoForge, Gradle build, Minecraft client/server launch, multiplayer test, save/reload test.

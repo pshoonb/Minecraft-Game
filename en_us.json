@@ -1,0 +1,8 @@
+{
+  "key.rpgcore.open_menu": "Open RPG Data Prototype",
+  "key.categories.rpgcore": "RPG Core",
+  "screen.rpgcore.title": "RPG DATA PROTOTYPE",
+  "screen.rpgcore.subtitle": "Server-authoritative player data check",
+  "screen.rpgcore.waiting": "Waiting for server data...",
+  "screen.rpgcore.increment_test": "Increment Test Counter"
+}
