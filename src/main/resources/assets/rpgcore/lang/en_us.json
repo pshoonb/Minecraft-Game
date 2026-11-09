@@ -8,8 +8,10 @@
   "screen.rpgcore.waiting": "Waiting for server data...",
   "screen.rpgcore.reset": "Reset Attributes (Free)",
   "screen.rpgcore.stat.strength": "Strength",
-  "screen.rpgcore.stat.agility": "Agility",
-  "screen.rpgcore.stat.constitution": "Constitution",
-  "screen.rpgcore.stat.intelligence": "Intelligence",
-  "screen.rpgcore.stat.spirit": "Spirit"
+  "screen.rpgcore.stat.health": "Health",
+  "screen.rpgcore.stat.defense": "Defense",
+  "screen.rpgcore.stat.mining_speed": "Mining Speed",
+  "screen.rpgcore.stat.luck": "Luck",
+  "screen.rpgcore.stat.speed": "Speed",
+  "screen.rpgcore.stat.jump_height": "Jump Height"
 }
