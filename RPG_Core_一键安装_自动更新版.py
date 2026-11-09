@@ -70,10 +70,10 @@ MOD_CACHE_DIR = INSTALLER_CACHE_DIR / "ModCache"
 # =====================================================
 
 def choose_game_directory(default_dir: Path):
-    """显示游戏目录选择窗口；取消时返回 None。"""
+    """显示游戏目录选择窗口；Cancel时返回 None。"""
 
     window = tk.Tk()
-    window.title("选择 Minecraft 游戏目录")
+    window.title("Select Minecraft Game Directory")
     window.resizable(False, False)
 
     width = 680
@@ -89,13 +89,13 @@ def choose_game_directory(default_dir: Path):
 
     tk.Label(
         window,
-        text="请选择 Minecraft 游戏目录：",
+        text="请Select Minecraft Game Directory：",
         font=("Segoe UI", 10, "bold")
     ).pack(anchor="w", padx=16, pady=(15, 5))
 
     tk.Label(
         window,
-        text="默认使用 .minecraft。若 TLauncher 使用独立游戏目录，请点击“浏览...”选择该目录。",
+        text="The default is .minecraft. If TLauncher uses a separate game directory, click “Browse...” to select it.",
         fg="gray",
         wraplength=640,
         justify="left"
@@ -125,7 +125,7 @@ def choose_game_directory(default_dir: Path):
 
         selected = filedialog.askdirectory(
             parent=window,
-            title="选择 Minecraft 游戏目录",
+            title="Select Minecraft Game Directory",
             initialdir=str(initial_dir),
             mustexist=True
         )
@@ -139,7 +139,7 @@ def choose_game_directory(default_dir: Path):
         if not raw_path:
             messagebox.showerror(
                 APP_NAME,
-                "游戏目录不能为空。",
+                "The game directory cannot be empty.",
                 parent=window
             )
             return
@@ -149,7 +149,7 @@ def choose_game_directory(default_dir: Path):
         if selected.exists() and not selected.is_dir():
             messagebox.showerror(
                 APP_NAME,
-                "选择的路径不是文件夹，请重新选择。",
+                "The selected path is not a folder. Please choose another path.",
                 parent=window
             )
             return
@@ -157,9 +157,9 @@ def choose_game_directory(default_dir: Path):
         if not selected.exists():
             create_it = messagebox.askyesno(
                 APP_NAME,
-                "这个目录目前不存在：\n\n"
+                "This folder does not exist yet:\n\n"
                 f"{selected}\n\n"
-                "安装时需要创建这个目录。是否使用这个路径？",
+                "This folder will be created during installation. Do you want to use this path?",
                 parent=window
             )
             if not create_it:
@@ -173,7 +173,7 @@ def choose_game_directory(default_dir: Path):
 
     tk.Button(
         path_frame,
-        text="浏览...",
+        text="Browse...",
         command=browse,
         width=10
     ).pack(side="left", padx=(8, 0))
@@ -183,14 +183,14 @@ def choose_game_directory(default_dir: Path):
 
     tk.Button(
         button_frame,
-        text="使用此目录",
+        text="Use This Folder",
         command=confirm,
         width=16
     ).pack(side="left", padx=5)
 
     tk.Button(
         button_frame,
-        text="取消",
+        text="Cancel",
         command=cancel,
         width=10
     ).pack(side="left", padx=5)
@@ -230,12 +230,12 @@ def check_installer_update():
             remote_bytes = response.read(5 * 1024 * 1024 + 1)
 
         if not remote_bytes or len(remote_bytes) > 5 * 1024 * 1024:
-            raise RuntimeError("GitHub 返回的安装器文件为空或超过 5 MB。")
+            raise RuntimeError("GitHub returned an empty installer file or a file larger than 5 MB.")
 
         local_bytes = installer_path.read_bytes()
 
         if remote_bytes == local_bytes:
-            print("安装器已是 GitHub 当前版本。", flush=True)
+            print("The installer is already up to date.", flush=True)
             return False
 
         local_hash = hashlib.sha256(local_bytes).hexdigest()
@@ -243,17 +243,17 @@ def check_installer_update():
 
         should_update = messagebox.askyesno(
             APP_NAME,
-            "检测到 GitHub 上的安装器与本地文件不同。\\n\\n"
-            f"本地 SHA-256：{local_hash[:16]}...\\n"
-            f"GitHub SHA-256：{remote_hash[:16]}...\\n\\n"
-            "同步更新会覆盖当前 Python 安装器文件；"
-            "更新前会自动备份当前文件。\\n\\n"
-            "选择“是”：下载并同步更新，随后自动重新启动。\\n"
-            "选择“否”：保留当前文件，继续执行本次安装。"
+            "A different installer version was found on GitHub.\n\n"
+            f"Local SHA-256: {local_hash[:16]}...\n"
+            f"GitHub SHA-256: {remote_hash[:16]}...\n\n"
+            "Syncing will replace the current Python installer file; "
+            "the current file will be backed up first.\n\n"
+            "Select “Yes”: download the update, replace the file, and restart the installer.\n"
+            "Select “No”: keep the current file and continue this installation."
         )
 
         if not should_update:
-            print("用户选择继续使用当前安装器版本。", flush=True)
+            print("The user chose to continue with the current installer.", flush=True)
             return False
 
         # 在覆盖本地文件前，先检查远端源码能否通过 Python 语法编译。
@@ -261,7 +261,7 @@ def check_installer_update():
 
         temporary_path.write_bytes(remote_bytes)
         if file_hash(temporary_path) != remote_hash:
-            raise RuntimeError("安装器下载文件校验失败。")
+            raise RuntimeError("The downloaded installer failed its integrity check.")
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         backup_path = installer_path.with_name(
@@ -283,10 +283,10 @@ def check_installer_update():
         os.replace(temporary_path, installer_path)
 
         show_info(
-            "安装器已同步更新！\\n\\n"
-            "旧版备份：\\n"
+            "The installer has been updated successfully!\n\n"
+            "Backup of the previous version:\n"
             + str(backup_path)
-            + "\\n\\n点击“确定”后将自动重新启动新版安装器。"
+            + "\n\n点击“确定”后将自动重新启动新版安装器。"
         )
 
         try:
@@ -297,9 +297,9 @@ def check_installer_update():
             )
         except Exception as exc:
             show_error(
-                "新版文件已更新，但无法自动重新启动。\\n\\n"
-                f"原因：{exc}\\n\\n"
-                "请关闭当前窗口，再双击新版 Python 安装器运行。"
+                "The installer was updated, but it could not restart automatically.\n\n"
+                f"Reason: {exc}\n\n"
+                "Close this window, then double-click the updated Python installer to run it."
             )
 
         return True
@@ -308,11 +308,11 @@ def check_installer_update():
         temporary_path.unlink(missing_ok=True)
         messagebox.showwarning(
             APP_NAME,
-            "检查或同步安装器更新时遇到问题。\\n\\n"
-            f"原因：{exc}\\n\\n"
-            "将保留当前安装器并继续原有安装流程。"
+            "An error occurred while checking for or syncing the installer update.\n\n"
+            f"Reason: {exc}\n\n"
+            "The current installer will be kept, and the installation will continue."
         )
-        print("安装器更新检查失败，继续使用本地版本：", exc, flush=True)
+        print("Installer update check failed. Continuing with the local version: ", exc, flush=True)
         return False
 
 
@@ -351,13 +351,13 @@ def find_files():
 
     if not installer.is_file():
         raise FileNotFoundError(
-            f"找不到 NeoForge 安装器：\n{INSTALLER_NAME}\n\n"
-            "请把它放在 Python 程序旁边。"
+            f"NeoForge installer not found:\n{INSTALLER_NAME}\n\n"
+            "Place it in the same folder as this Python script."
         )
 
     if not valid_jar(installer):
         raise RuntimeError(
-            "NeoForge 安装器文件损坏或不是有效 JAR。"
+            "The NeoForge installer is damaged or is not a valid JAR file."
         )
 
     # 本地模组变为可选项：没有本地 JAR 时仍可从 GitHub Release 安装。
@@ -371,7 +371,7 @@ def find_files():
     if len(candidates) > 1:
         names = "\n".join(item.name for item in candidates)
         raise RuntimeError(
-            "程序目录中发现多个 RPG Core JAR，无法确定本地备用版本：\n\n"
+            "Multiple RPG Core JAR files were found in the script folder, so the local fallback cannot be determined:\n\n"
             + names
             + "\n\n请只保留一个本地备用 JAR，或将旧版移出此目录。"
         )
@@ -380,7 +380,7 @@ def find_files():
 
     if local_mod and not valid_jar(local_mod):
         raise RuntimeError(
-            f"本地 RPG Core 文件损坏或不是有效 JAR：\n{local_mod.name}"
+            f"The local RPG Core file is damaged or is not a valid JAR:\n{local_mod.name}"
         )
 
     return installer, local_mod
@@ -412,7 +412,7 @@ def get_latest_release():
     assets = release.get("assets", [])
 
     if not tag or not isinstance(assets, list):
-        raise RuntimeError("GitHub Release 数据格式不完整。")
+        raise RuntimeError("The GitHub Release data is incomplete or invalid.")
 
     jar_assets = [
         asset for asset in assets
@@ -422,7 +422,7 @@ def get_latest_release():
 
     if len(jar_assets) != 1:
         raise RuntimeError(
-            "最新 Release 中没有找到唯一的 RPG Core JAR 文件。"
+            "The latest Release does not contain exactly one RPG Core JAR file."
         )
 
     jar_asset = jar_assets[0]
@@ -434,7 +434,7 @@ def get_latest_release():
         or Path(jar_name).name != jar_name
         or not jar_url
     ):
-        raise RuntimeError("最新 Release 的模组文件名或下载地址无效。")
+        raise RuntimeError("The mod filename or download URL in the latest Release is invalid.")
 
     expected_hash = None
 
@@ -470,7 +470,7 @@ def get_latest_release():
         or not re.fullmatch(r"[0-9a-f]{64}", expected_hash)
     ):
         raise RuntimeError(
-            "最新 Release 缺少有效的 SHA-256 校验值，已停止下载。"
+            "The latest Release does not provide a valid SHA-256 checksum. The download was stopped."
         )
 
     return {
@@ -501,7 +501,7 @@ def download_release_mod(release_info):
 
         temporary_path.unlink(missing_ok=True)
 
-        print("正在下载 GitHub 最新版模组...", flush=True)
+        print("Downloading the latest RPG Core mod from GitHub...", flush=True)
 
         with github_request(release_info["url"], timeout=120) as response:
             with open(temporary_path, "wb") as output:
@@ -512,12 +512,12 @@ def download_release_mod(release_info):
 
         if actual_hash.lower() != expected_hash.lower():
             raise RuntimeError(
-                "模组 SHA-256 校验失败，下载文件已拒绝安装。"
+                "The mod failed its SHA-256 check. The downloaded file will not be installed."
             )
 
         if not valid_jar(temporary_path):
             raise RuntimeError(
-                "下载文件不是有效 JAR，已拒绝安装。"
+                "The downloaded file is not a valid JAR. Installation was cancelled."
             )
 
         # 先完整下载并校验，再原子替换缓存文件。
@@ -565,51 +565,51 @@ def choose_mod_to_install(local_mod, state):
         release = get_latest_release()
     except Exception as exc:
         warning = (
-            "暂时无法检查 GitHub 最新版本。\n\n"
-            f"原因：{exc}\n\n"
+            "Unable to check the latest version on GitHub.\n\n"
+            f"Reason: {exc}\n\n"
         )
 
         if fallback_mod:
             messagebox.showwarning(
                 APP_NAME,
-                warning + "将继续使用本地/已安装的模组版本。"
+                warning + "The locally available or currently installed mod version will be used."
             )
             return fallback_mod
 
         raise RuntimeError(
-            warning + "当前没有可用的本地模组文件，请检查网络后重试。"
+            warning + "No local mod file is available. Check your internet connection and try again."
         )
 
     latest_hash = release["sha256"]
 
     if installed_mod and file_hash(installed_mod).lower() == latest_hash:
         print(
-            f"游戏目录中的 RPG Core 已是最新版：{release['tag']}",
+            f"RPG Core in the game folder is already up to date: {release['tag']}",
             flush=True
         )
         return installed_mod
 
     if local_mod and file_hash(local_mod).lower() == latest_hash:
         print(
-            f"本地 RPG Core 已是最新版：{release['tag']}",
+            f"The local RPG Core file is already up to date: {release['tag']}",
             flush=True
         )
         return local_mod
 
     if installed_mod:
-        old_description = f"当前游戏目录：{installed_mod.name}"
+        old_description = f"Current game folder: {installed_mod.name}"
     elif local_mod:
-        old_description = f"本地备用文件：{local_mod.name}"
+        old_description = f"Local fallback file: {local_mod.name}"
     else:
-        old_description = "当前没有检测到本地旧版本"
+        old_description = "No local previous version was found"
 
     prompt = (
-        "发现 RPG Core 新版本！\n\n"
-        f"最新版本：{release['tag']}\n"
-        f"下载文件：{release['name']}\n\n"
+        "A new version of RPG Core is available!\n\n"
+        f"Latest version: {release['tag']}\n"
+        f"Download file: {release['name']}\n\n"
         f"{old_description}\n\n"
-        "是否下载并安装最新版？\n"
-        "下载完成后会先校验 SHA-256，再安装模组。"
+        "Download and install the latest version?\n"
+        "The downloaded file will be verified with SHA-256 before installation."
     )
 
     should_update = messagebox.askyesno(APP_NAME, prompt)
@@ -620,12 +620,12 @@ def choose_mod_to_install(local_mod, state):
         except Exception as exc:
             messagebox.showwarning(
                 APP_NAME,
-                "新版下载或校验失败，原有模组文件不会被删除。\n\n"
-                f"原因：{exc}\n\n"
+                "The new version could not be downloaded or verified. Your existing mod file will not be deleted.\n\n"
+                f"Reason: {exc}\n\n"
                 + (
-                    "将继续使用当前本地/已安装版本。"
+                    "The current local or installed version will be used."
                     if fallback_mod
-                    else "目前没有可用的旧版模组，安装已停止。"
+                    else "No previous mod version is available. Installation has been stopped."
                 )
             )
 
@@ -633,15 +633,15 @@ def choose_mod_to_install(local_mod, state):
                 return fallback_mod
 
             raise RuntimeError(
-                "最新版下载失败，而且没有可用的本地模组版本。"
+                "The latest version could not be downloaded, and no local mod version is available."
             )
 
     if fallback_mod:
-        print("用户选择暂不更新，继续使用现有模组。", flush=True)
+        print("The user chose not to update. Continuing with the existing mod.", flush=True)
         return fallback_mod
 
     raise RuntimeError(
-        "你选择了暂不下载最新版，但当前没有本地/已安装的模组可供安装。"
+        "You chose not to download the latest version, but no local or installed mod is available."
     )
 
 
@@ -749,7 +749,7 @@ def safe_extract(archive, destination):
 
             if target != root_path and root_path not in target.parents:
                 raise RuntimeError(
-                    "Java 安装包包含不安全的文件路径。"
+                    "The Java archive contains an unsafe file path."
                 )
 
         z.extractall(destination)
@@ -781,7 +781,7 @@ def install_java():
     if cached:
         return cached
 
-    print("正在获取 Java 21 下载信息...", flush=True)
+    print("Getting Java 21 download information...", flush=True)
 
     request = urllib.request.Request(
         JAVA_API,
@@ -792,7 +792,7 @@ def install_java():
         assets = json.loads(response.read().decode("utf-8"))
 
     if not assets:
-        raise RuntimeError("无法获取 Java 21 下载信息。")
+        raise RuntimeError("Unable to retrieve Java 21 download information.")
 
     package = assets[0]["binary"]["package"]
     download_url = package["link"]
@@ -801,7 +801,7 @@ def install_java():
     temporary_archive = JAVA_DIR / "java21.zip.download"
 
     try:
-        print("正在下载 Java 21...", flush=True)
+        print("Downloading Java 21...", flush=True)
 
         request = urllib.request.Request(
             download_url,
@@ -817,12 +817,12 @@ def install_java():
 
             if actual_hash.lower() != expected_hash.lower():
                 raise RuntimeError(
-                    "Java 下载文件校验失败，已删除下载文件。"
+                    "The Java download failed its integrity check. The downloaded file has been removed."
                 )
 
         os.replace(temporary_archive, archive)
 
-        print("正在解压 Java 21...", flush=True)
+        print("Extracting Java 21...", flush=True)
         safe_extract(archive, JAVA_DIR)
 
     finally:
@@ -832,7 +832,7 @@ def install_java():
     java = find_cached_java()
     if not java:
         raise RuntimeError(
-            "Java 21 安装完成，但无法找到 java.exe。"
+            "Java 21 was installed, but java.exe could not be found."
         )
 
     return java
@@ -926,11 +926,11 @@ def install_neoforge(java, installer, state):
         and isinstance(previous, dict)
         and previous.get("version") == NEOFORGE_VERSION
     ):
-        print("NeoForge 已安装，跳过重复安装。", flush=True)
+        print("NeoForge is already installed. Skipping reinstallation.", flush=True)
         return
 
     if neoforge_installed():
-        print("检测到 NeoForge 已存在。", flush=True)
+        print("An existing NeoForge installation was detected.", flush=True)
 
         state["neoforge"] = {
             "version": NEOFORGE_VERSION,
@@ -939,7 +939,7 @@ def install_neoforge(java, installer, state):
         save_state(state)
         return
 
-    print("正在安装 NeoForge 客户端...", flush=True)
+    print("Installing the NeoForge client...", flush=True)
 
     command = [
         str(java),
@@ -957,13 +957,13 @@ def install_neoforge(java, installer, state):
 
     if result.returncode != 0:
         raise RuntimeError(
-            "NeoForge 安装失败。\n"
-            f"退出代码：{result.returncode}"
+            "NeoForge installation failed.\n"
+            f"Exit code: {result.returncode}"
         )
 
     if not neoforge_installed():
         raise RuntimeError(
-            "安装器结束，但未找到正确的 NeoForge 版本配置。"
+            "The installer finished, but the expected NeoForge version profile was not found."
         )
 
     state["neoforge"] = {
@@ -973,7 +973,7 @@ def install_neoforge(java, installer, state):
     }
     save_state(state)
 
-    print("NeoForge 安装成功。", flush=True)
+    print("NeoForge installed successfully.", flush=True)
 
 
 # =====================================================
@@ -1006,11 +1006,11 @@ def install_mod(mod_file, state):
         if old_file.is_file() and old_hash:
             if file_hash(old_file) == old_hash:
                 old_file.unlink()
-                print("已清理上一次管理的旧模组文件。", flush=True)
+                print("Removed the previous mod file managed by this installer.", flush=True)
 
     if destination.exists() and file_hash(destination) == source_hash:
         print(
-            "RPG Core 已存在且内容相同，跳过复制。",
+            "RPG Core is already present and identical. Skipping file copy.",
             flush=True
         )
     else:
@@ -1022,7 +1022,7 @@ def install_mod(mod_file, state):
             shutil.copy2(mod_file, temporary)
 
             if file_hash(temporary) != source_hash or not valid_jar(temporary):
-                raise RuntimeError("复制到游戏目录后的模组校验失败。")
+                raise RuntimeError("The mod failed verification after being copied to the game folder.")
 
             if destination.exists():
                 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -1042,10 +1042,10 @@ def install_mod(mod_file, state):
                     counter += 1
 
                 destination.replace(backup)
-                print("旧模组已备份。", flush=True)
+                print("The previous mod file has been backed up.", flush=True)
 
             os.replace(temporary, destination)
-            print("RPG Core 安装成功。", flush=True)
+            print("RPG Core installed successfully.", flush=True)
 
         finally:
             temporary.unlink(missing_ok=True)
@@ -1066,7 +1066,7 @@ def main():
     global GAME_DIR
 
     if os.name != "nt":
-        raise RuntimeError("此安装器目前只支持 Windows。")
+        raise RuntimeError("This installer currently supports Windows only.")
 
     # 启动时提供可选的安装器同步更新；用户拒绝或网络失败均继续旧版。
     if check_installer_update():
@@ -1080,35 +1080,35 @@ def main():
 
     # 1. 查找 NeoForge 安装器与可选的本地模组备用文件。
     installer, local_mod = find_files()
-    print("找到 NeoForge：", installer.name, flush=True)
+    print("NeoForge installer found: ", installer.name, flush=True)
 
     if local_mod:
-        print("找到本地模组备用文件：", local_mod.name, flush=True)
+        print("Local fallback mod found: ", local_mod.name, flush=True)
     else:
-        print("未找到本地模组，将从 GitHub Releases 获取最新版。", flush=True)
+        print("No local mod found. The latest version will be retrieved from GitHub Releases.", flush=True)
 
     # 2. 先选择游戏目录，再进行所有依赖该目录的操作。
     selected_dir = choose_game_directory(DEFAULT_GAME_DIR)
 
     if selected_dir is None:
-        print("用户取消安装。", flush=True)
+        print("用户Cancel安装。", flush=True)
         return
 
     GAME_DIR = selected_dir
-    print("游戏目录：", GAME_DIR, flush=True)
+    print("Game directory: ", GAME_DIR, flush=True)
 
     # 3. 确认 TLauncher 已关闭。
     response = messagebox.askokcancel(
         APP_NAME,
-        "即将自动安装 RPG Core。\n\n"
-        "请先关闭 TLauncher 和正在运行的 Minecraft。\n\n"
-        "安装目录：\n"
+        "RPG Core is ready to be installed.\n\n"
+        "Please close TLauncher and Minecraft before continuing.\n\n"
+        "Installation directory:\n"
         + str(GAME_DIR)
         + "\n\n确定继续吗？"
     )
 
     if not response:
-        print("用户取消安装。", flush=True)
+        print("用户Cancel安装。", flush=True)
         return
 
     GAME_DIR.mkdir(parents=True, exist_ok=True)
@@ -1118,16 +1118,16 @@ def main():
 
     # 5. 查询 GitHub 最新 Release，下载前询问用户并校验 SHA-256。
     mod_file = choose_mod_to_install(local_mod, state)
-    print("本次准备安装：", mod_file.name, flush=True)
+    print("Mod selected for this installation: ", mod_file.name, flush=True)
 
     # 6. 准备 Java。
-    print("正在检查 Java 21...", flush=True)
+    print("Checking for Java 21...", flush=True)
     java = find_java()
 
     if java:
-        print("已找到 Java 21：", java, flush=True)
+        print("Java 21 found: ", java, flush=True)
     else:
-        print("没有找到 Java 21，自动下载...", flush=True)
+        print("Java 21 was not found. Downloading it automatically...", flush=True)
         java = install_java()
 
     # 7. 安装 NeoForge。
@@ -1138,15 +1138,15 @@ def main():
 
     # 9. 完成。
     show_info(
-        "RPG Core 安装成功！\n\n"
-        "Minecraft：1.21.1\n"
-        "NeoForge：" + NEOFORGE_VERSION + "\n"
-        "模组：" + mod_file.name + "\n\n"
-        "安装目录：\n" + str(GAME_DIR) + "\n\n"
-        "请重新打开 TLauncher，选择 NeoForge 21.1.265 配置启动。"
+        "RPG Core installed successfully!\n\n"
+        "Minecraft: 1.21.1\n"
+        "NeoForge: " + NEOFORGE_VERSION + "\n"
+        "Mod: " + mod_file.name + "\n\n"
+        "Installation directory:\n" + str(GAME_DIR) + "\n\n"
+        "Reopen TLauncher and launch the NeoForge 21.1.265 profile."
     )
 
-    print("所有安装步骤已完成。", flush=True)
+    print("All installation steps completed.", flush=True)
 
 
 # =====================================================
@@ -1157,8 +1157,8 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("安装被用户中断。", flush=True)
-        show_error("安装已被中断。请检查游戏目录后再重新运行。")
+        print("Installation interrupted by the user.", flush=True)
+        show_error("Installation was interrupted. Check the game directory and run the installer again.")
     except Exception as exc:
-        print("安装失败：", exc, flush=True)
-        show_error("安装失败：\n\n" + str(exc))
+        print("Installation failed: ", exc, flush=True)
+        show_error("Installation failed: \n\n" + str(exc))
