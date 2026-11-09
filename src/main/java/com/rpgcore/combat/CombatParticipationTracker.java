@@ -14,6 +14,7 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.HashMap;
@@ -28,6 +29,11 @@ import java.util.WeakHashMap;
  * <p>Participation is transient server state. A player's timer is refreshed by
  * every successfully applied health hit and expires after 1,200 game ticks.</p>
  *
+ * <p>Online participants are evaluated using their current attribute at the
+ * target's death. When a participant logs out, their latest attribute is copied
+ * into each active participation record so they remain eligible for the full
+ * 60-second window.</p>
+ *
  * <p>Each LivingExperienceDropEvent is treated as one vanilla XP award batch.
  * This is important for entities such as the Ender Dragon, which release XP in
  * multiple batches during their death animation.</p>
@@ -35,12 +41,19 @@ import java.util.WeakHashMap;
 public final class CombatParticipationTracker {
     public static final long PARTICIPATION_TIMEOUT_TICKS = 60L * 20L;
 
-    private static final Map<LivingEntity, Map<UUID, Long>> PARTICIPANTS =
+    private static final Map<LivingEntity, Map<UUID, ParticipantRecord>> PARTICIPANTS =
             new WeakHashMap<>();
     private static final Map<LivingEntity, Long> DEATH_EXPERIENCE_LOOT =
             new WeakHashMap<>();
 
     private CombatParticipationTracker() {
+    }
+
+    /** Last successful hit time plus the participant's most recently known online attribute. */
+    private record ParticipantRecord(long lastDamageGameTime, long lastKnownExperienceLoot) {
+        private ParticipantRecord withExperienceLoot(long experienceLoot) {
+            return new ParticipantRecord(lastDamageGameTime, Math.max(0L, experienceLoot));
+        }
     }
 
     /** Record only damage that was actually applied to the victim's health. */
@@ -60,19 +73,46 @@ public final class CombatParticipationTracker {
         }
 
         long now = serverLevel.getGameTime();
-        Map<UUID, Long> participants =
+        Map<UUID, ParticipantRecord> participants =
                 PARTICIPANTS.computeIfAbsent(victim, ignored -> new HashMap<>());
 
-        // Expire old participants before refreshing this attacker's timer.
+        // Expire stale players before refreshing this attacker's record.
         participants.entrySet().removeIf(entry ->
-                now - entry.getValue() >= PARTICIPATION_TIMEOUT_TICKS);
-        participants.put(attacker.getUUID(), now);
+                now - entry.getValue().lastDamageGameTime() >= PARTICIPATION_TIMEOUT_TICKS);
+
+        PlayerRpgData data = attacker.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        participants.put(attacker.getUUID(),
+                new ParticipantRecord(now, data.experienceLoot()));
     }
 
     /**
-     * Snapshot the highest eligible online participant's current attribute at
-     * the moment the living entity dies. Keeping this snapshot until the entity
-     * leaves the level supports multi-batch XP drops such as the Ender Dragon.
+     * Capture the latest attribute before the player is removed from the
+     * server's player list. NeoForge fires PlayerLoggedOutEvent before saving
+     * and removing the ServerPlayer from PlayerList.
+     */
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        UUID playerId = player.getUUID();
+        long latestExperienceLoot =
+                player.getData(ModAttachments.PLAYER_RPG_DATA.get()).experienceLoot();
+
+        for (Map<UUID, ParticipantRecord> participants : PARTICIPANTS.values()) {
+            ParticipantRecord record = participants.get(playerId);
+            if (record != null) {
+                participants.put(playerId, record.withExperienceLoot(latestExperienceLoot));
+            }
+        }
+    }
+
+    /**
+     * Snapshot the highest eligible participant's current/latest-known
+     * attribute at the moment the living entity dies. Online players are read
+     * live; offline players use the value captured by their logout event.
+     * Keep the snapshot until the entity leaves the level to support multiple
+     * XP batches such as the Ender Dragon.
      */
     public static void onLivingDeath(LivingDeathEvent event) {
         if (event.isCanceled()) {
@@ -84,34 +124,42 @@ public final class CombatParticipationTracker {
             return;
         }
 
-        Map<UUID, Long> participants = PARTICIPANTS.get(victim);
+        Map<UUID, ParticipantRecord> participants = PARTICIPANTS.get(victim);
         if (participants == null || participants.isEmpty()) {
+            DEATH_EXPERIENCE_LOOT.remove(victim);
             return;
         }
 
         long now = serverLevel.getGameTime();
         participants.entrySet().removeIf(entry ->
-                now - entry.getValue() >= PARTICIPATION_TIMEOUT_TICKS);
+                now - entry.getValue().lastDamageGameTime() >= PARTICIPATION_TIMEOUT_TICKS);
 
         if (participants.isEmpty()) {
             PARTICIPANTS.remove(victim);
+            DEATH_EXPERIENCE_LOOT.remove(victim);
             return;
         }
 
         long highestExperienceLoot = 0L;
-        for (UUID participantId : participants.keySet()) {
-            // As in the original multiplayer rule, only participants still
-            // online at the kill are eligible for this server-side snapshot.
-            ServerPlayer participant =
-                    serverLevel.getServer().getPlayerList().getPlayer(participantId);
-            if (participant == null || participant.getServer() != serverLevel.getServer()) {
-                continue;
-            }
+        for (Map.Entry<UUID, ParticipantRecord> entry : participants.entrySet()) {
+            UUID participantId = entry.getKey();
+            long participantExperienceLoot =
+                    entry.getValue().lastKnownExperienceLoot();
 
-            PlayerRpgData data =
-                    participant.getData(ModAttachments.PLAYER_RPG_DATA.get());
+            ServerPlayer onlineParticipant =
+                    serverLevel.getServer().getPlayerList().getPlayer(participantId);
+            if (onlineParticipant != null
+                    && onlineParticipant.getServer() == serverLevel.getServer()) {
+                // A player who is still online may have changed their attributes
+                // since their last hit, so read their live kill-time value.
+                participantExperienceLoot = onlineParticipant
+                        .getData(ModAttachments.PLAYER_RPG_DATA.get())
+                        .experienceLoot();
+            }
+            // Otherwise retain the most recent value captured on hit/logout.
+
             highestExperienceLoot = Math.max(
-                    highestExperienceLoot, data.experienceLoot());
+                    highestExperienceLoot, participantExperienceLoot);
         }
 
         if (highestExperienceLoot > 0L) {
@@ -187,11 +235,12 @@ public final class CombatParticipationTracker {
 
     /** Periodically expire abandoned participation data, even if the mob lives on. */
     public static void onServerTick(ServerTickEvent.Post event) {
-        Iterator<Map.Entry<LivingEntity, Map<UUID, Long>>> entityIterator =
+        Iterator<Map.Entry<LivingEntity, Map<UUID, ParticipantRecord>>> entityIterator =
                 PARTICIPANTS.entrySet().iterator();
 
         while (entityIterator.hasNext()) {
-            Map.Entry<LivingEntity, Map<UUID, Long>> entityEntry = entityIterator.next();
+            Map.Entry<LivingEntity, Map<UUID, ParticipantRecord>> entityEntry =
+                    entityIterator.next();
             LivingEntity entity = entityEntry.getKey();
             if (entity == null || entity.isRemoved()) {
                 entityIterator.remove();
@@ -200,9 +249,10 @@ public final class CombatParticipationTracker {
             }
 
             long now = entity.level().getGameTime();
-            Map<UUID, Long> participants = entityEntry.getValue();
+            Map<UUID, ParticipantRecord> participants = entityEntry.getValue();
             participants.entrySet().removeIf(entry ->
-                    now - entry.getValue() >= PARTICIPATION_TIMEOUT_TICKS);
+                    now - entry.getValue().lastDamageGameTime()
+                            >= PARTICIPATION_TIMEOUT_TICKS);
 
             if (participants.isEmpty()) {
                 entityIterator.remove();

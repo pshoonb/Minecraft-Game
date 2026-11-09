@@ -8,6 +8,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 @Mod(RpgCoreMod.MOD_ID)
 public final class RpgCoreMod {
@@ -20,6 +21,7 @@ public final class RpgCoreMod {
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerRespawn);
         NeoForge.EVENT_BUS.addListener(CombatParticipationTracker::onLivingDamage);
+        NeoForge.EVENT_BUS.addListener(CombatParticipationTracker::onPlayerLoggedOut);
 
         // Take the snapshot after other death-event listeners have had a chance
         // to cancel the death, and process the final XP amount after other mods.

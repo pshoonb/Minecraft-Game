@@ -17,12 +17,17 @@
 - [ ] Existing player attachment data loads with Experience Loot defaulting to zero.
 - [ ] Logout/login, death/respawn and dedicated-server restart preserve the allocated attribute values.
 
-## Combat participation
+## Combat participation and offline eligibility
 - [ ] Only server-side, successfully applied player damage adds a participant.
 - [ ] Direct player attacks and player-owned projectiles are both attributed to the player.
 - [ ] Repeated damage by one player refreshes their 60-second timer without duplicating their entry.
 - [ ] A participant is excluded once 1,200 game ticks have elapsed since their last successful hit.
-- [ ] At LivingDeathEvent, the current Experience Loot value is snapshotted from the highest eligible online participant.
+- [ ] Logging out does not remove a participant from any still-active entity record.
+- [ ] PlayerLoggedOutEvent captures the participant's latest Experience Loot attribute before the player is removed/saved.
+- [ ] An offline participant remains eligible until their last successful hit is 1,200 ticks old.
+- [ ] At LivingDeathEvent, online participants are read live and offline participants use their latest logout snapshot.
+- [ ] An attribute change after the last hit but before logout is reflected in the offline participant's value.
+- [ ] A player who logs back in before the target dies is evaluated using their current online attribute.
 - [ ] Changing an attribute after the target has died does not change the stored value used by subsequent XP batches.
 - [ ] A death canceled by another event listener does not leave a valid death snapshot.
 

@@ -1,4 +1,4 @@
-RPG Core Prototype 0.2.4
+RPG Core Prototype 0.2.5
 
 Target:
 - Minecraft Java Edition 1.21.1
@@ -18,7 +18,8 @@ Implemented in source:
 - Inventory-screen button opens the attribute panel; the conflicting P-key binding has been removed.
 - Attribute panel supports English and Simplified Chinese localization.
 - Experience Loot participation tracking refreshes on successful player damage and expires after 60 seconds.
-- Current highest eligible online participant value is snapshotted at the entity's death.
+- A participant's latest Experience Loot value is refreshed on every hit and captured again on logout.
+- Offline participants remain eligible for 60 seconds after their last successful hit; online participants are read live at the entity's death, while offline participants use their latest logout snapshot.
 - Each LivingExperienceDropEvent batch is replaced by custom XP orbs using the agreed per-orb denomination calculation.
 - Nearby pre-existing XP orbs are never searched or rewritten; same-denomination vanilla merging only stacks orb count.
 - Multi-batch entity XP drops, including Ender Dragon waves, are processed batch by batch.
