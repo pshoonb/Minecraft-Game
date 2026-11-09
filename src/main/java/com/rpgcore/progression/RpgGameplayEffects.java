@@ -8,74 +8,92 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.phys.Vec3;
 
 /**
- * Applies the first playable pass of RPG progression to vanilla player attributes.
+ * Applies the seven allocated RPG attributes to vanilla player mechanics.
  *
- * <p>All values below are prototype tuning values. Keeping them here makes later
- * balance changes independent from persistence, networking, and the UI.</p>
+ * <p>These are first-pass prototype tuning values. Each is centralized here
+ * so balance can be adjusted without changing saved data, networking, or UI.</p>
  *
- * <p>Square-root scaling is intentional: the agreed attribute-point formula
- * grants increasingly large totals, so a linear conversion would grow too fast.</p>
+ * <p>Attribute points use square-root scaling and a 10,000-point input cap to
+ * keep the agreed progression-point curve from producing unbounded bonuses.</p>
  */
 public final class RpgGameplayEffects {
-    private static final double MAX_EFFECTIVE_LEVEL = 100.0D;
     private static final long ATTRIBUTE_POINTS_SOFT_CAP = 10_000L;
-    private static final double MAX_EFFECTIVE_ATTRIBUTE_POINTS = 100.0D;
 
-    // Baseline character growth from the current (not historical maximum) RPG level.
-    private static final double LEVEL_HEALTH_PER_ROOT_LEVEL = 0.50D;
-    private static final double LEVEL_ARMOR_PER_ROOT_LEVEL = 0.05D;
+    private static final double STRENGTH_DAMAGE_PER_ROOT_POINT = 0.10D;
+    private static final double HEALTH_PER_ROOT_POINT = 0.50D;
+    private static final double DEFENSE_ARMOR_PER_ROOT_POINT = 0.20D;
+    private static final double MINING_SPEED_PER_ROOT_POINT = 0.005D;
+    private static final double LUCK_PER_ROOT_POINT = 0.05D;
+    private static final double SPEED_PER_ROOT_POINT = 0.0015D;
+    private static final double JUMP_VELOCITY_PER_ROOT_POINT = 0.002D;
 
-    // Allocated attribute growth.
-    private static final double AGILITY_SPEED_PER_ROOT_POINT = 0.0015D;
-    private static final double CONSTITUTION_HEALTH_PER_ROOT_POINT = 0.50D;
-    private static final double CONSTITUTION_ARMOR_PER_ROOT_POINT = 0.08D;
-
-    private static final ResourceLocation LEVEL_HEALTH_ID =
-            ResourceLocation.fromNamespaceAndPath("rpgcore", "level_health");
-    private static final ResourceLocation LEVEL_ARMOR_ID =
-            ResourceLocation.fromNamespaceAndPath("rpgcore", "level_armor");
-    private static final ResourceLocation AGILITY_SPEED_ID =
-            ResourceLocation.fromNamespaceAndPath("rpgcore", "agility_speed");
-    private static final ResourceLocation CONSTITUTION_HEALTH_ID =
-            ResourceLocation.fromNamespaceAndPath("rpgcore", "constitution_health");
-    private static final ResourceLocation CONSTITUTION_ARMOR_ID =
-            ResourceLocation.fromNamespaceAndPath("rpgcore", "constitution_armor");
+    private static final ResourceLocation STRENGTH_DAMAGE_ID =
+            id("strength_damage");
+    private static final ResourceLocation HEALTH_MAX_HEALTH_ID =
+            id("health_max_health");
+    private static final ResourceLocation DEFENSE_ARMOR_ID =
+            id("defense_armor");
+    private static final ResourceLocation MINING_SPEED_ID =
+            id("mining_speed");
+    private static final ResourceLocation LUCK_ID =
+            id("luck");
+    private static final ResourceLocation SPEED_ID =
+            id("speed");
 
     private RpgGameplayEffects() {
     }
 
+    private static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath("rpgcore", path);
+    }
+
     /**
-     * Replaces this mod's transient modifiers with values derived from the
-     * player's current server-side RPG data. Transient modifiers are rebuilt
-     * on login/respawn and are never saved as duplicate permanent bonuses.
+     * Replaces this mod's transient modifiers using current server-side data.
+     * Reapplying is safe on allocation, reset, login, and respawn.
      */
     public static void apply(ServerPlayer player, PlayerRpgData data) {
-        double levelScale = Math.min(Math.sqrt(Math.max(0, data.rpgLevel())), MAX_EFFECTIVE_LEVEL);
-        double agilityScale = effectiveAttributePoints(data.agility());
-        double constitutionScale = effectiveAttributePoints(data.constitution());
+        double strength = effectiveAttributePoints(data.strength());
+        double health = effectiveAttributePoints(data.health());
+        double defense = effectiveAttributePoints(data.defense());
+        double miningSpeed = effectiveAttributePoints(data.miningSpeed());
+        double luck = effectiveAttributePoints(data.luck());
+        double speed = effectiveAttributePoints(data.speed());
 
-        replaceModifier(player, Attributes.MAX_HEALTH, LEVEL_HEALTH_ID,
-                levelScale * LEVEL_HEALTH_PER_ROOT_LEVEL, AttributeModifier.Operation.ADD_VALUE);
-        replaceModifier(player, Attributes.ARMOR, LEVEL_ARMOR_ID,
-                levelScale * LEVEL_ARMOR_PER_ROOT_LEVEL, AttributeModifier.Operation.ADD_VALUE);
+        replaceModifier(player, Attributes.ATTACK_DAMAGE, STRENGTH_DAMAGE_ID,
+                strength * STRENGTH_DAMAGE_PER_ROOT_POINT, AttributeModifier.Operation.ADD_VALUE);
+        replaceModifier(player, Attributes.MAX_HEALTH, HEALTH_MAX_HEALTH_ID,
+                health * HEALTH_PER_ROOT_POINT, AttributeModifier.Operation.ADD_VALUE);
+        replaceModifier(player, Attributes.ARMOR, DEFENSE_ARMOR_ID,
+                defense * DEFENSE_ARMOR_PER_ROOT_POINT, AttributeModifier.Operation.ADD_VALUE);
+        replaceModifier(player, Attributes.BLOCK_BREAK_SPEED, MINING_SPEED_ID,
+                miningSpeed * MINING_SPEED_PER_ROOT_POINT, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+        replaceModifier(player, Attributes.LUCK, LUCK_ID,
+                luck * LUCK_PER_ROOT_POINT, AttributeModifier.Operation.ADD_VALUE);
+        replaceModifier(player, Attributes.MOVEMENT_SPEED, SPEED_ID,
+                speed * SPEED_PER_ROOT_POINT, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
-        replaceModifier(player, Attributes.MOVEMENT_SPEED, AGILITY_SPEED_ID,
-                agilityScale * AGILITY_SPEED_PER_ROOT_POINT, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-        replaceModifier(player, Attributes.MAX_HEALTH, CONSTITUTION_HEALTH_ID,
-                constitutionScale * CONSTITUTION_HEALTH_PER_ROOT_POINT, AttributeModifier.Operation.ADD_VALUE);
-        replaceModifier(player, Attributes.ARMOR, CONSTITUTION_ARMOR_ID,
-                constitutionScale * CONSTITUTION_ARMOR_PER_ROOT_POINT, AttributeModifier.Operation.ADD_VALUE);
-
-        // Lowering Constitution or current level can lower max health. Clamp
-        // current health so it never remains above the newly calculated maximum.
+        // A lower maximum health after a reset must not leave current health above the cap.
         player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
+    }
+
+    /** Adds the jump-height bonus to the upward velocity of an actual player jump. */
+    public static void applyJumpHeight(ServerPlayer player, PlayerRpgData data) {
+        double jumpScale = effectiveAttributePoints(data.jumpHeight())
+                * JUMP_VELOCITY_PER_ROOT_POINT;
+        if (jumpScale <= 0.0D) {
+            return;
+        }
+
+        Vec3 velocity = player.getDeltaMovement();
+        player.setDeltaMovement(velocity.x, velocity.y * (1.0D + jumpScale), velocity.z);
     }
 
     private static double effectiveAttributePoints(long points) {
         long safePoints = Math.max(0L, Math.min(points, ATTRIBUTE_POINTS_SOFT_CAP));
-        return Math.min(Math.sqrt(safePoints), MAX_EFFECTIVE_ATTRIBUTE_POINTS);
+        return Math.sqrt(safePoints);
     }
 
     private static void replaceModifier(ServerPlayer player,
