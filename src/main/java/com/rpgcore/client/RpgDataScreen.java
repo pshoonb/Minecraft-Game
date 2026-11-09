@@ -62,6 +62,11 @@ public final class RpgDataScreen extends Screen {
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 10)))
                     .bounds(left + 282, rowY, 44, 20).build());
+
+            addRenderableWidget(Button.builder(Component.literal("+100"),
+                    button -> PacketDistributor.sendToServer(
+                            new AllocateAttributePayload(attribute.networkId(), 100)))
+                    .bounds(left + 330, rowY, 50, 20).build());
         }
 
         addRenderableWidget(Button.builder(Component.translatable("screen.rpgcore.reset"),
@@ -97,13 +102,8 @@ public final class RpgDataScreen extends Screen {
                     data.availableAttributePoints(), data.totalAttributePoints()));
 
             long[] values = {
-                    data.strength(),
-                    data.health(),
-                    data.defense(),
-                    data.miningSpeed(),
-                    data.luck(),
-                    data.speed(),
-                    data.jumpHeight()
+                    data.strength(), data.health(), data.defense(), data.miningSpeed(),
+                    data.luck(), data.speed(), data.jumpHeight()
             };
             for (int i = 0; i < values.length; i++) {
                 valueLabels[i].setMessage(Component.literal(Long.toString(values[i])));

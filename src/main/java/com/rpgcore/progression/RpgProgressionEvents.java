@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /** Mirrors vanilla levels and applies player-only RPG gameplay effects. */
@@ -26,15 +27,20 @@ public final class RpgProgressionEvents {
         }
     }
 
-    /**
-     * Defense reduction is applied after vanilla armor and enchantment handling,
-     * so it also protects against damage types that bypass the armor attribute.
-     */
+    /** Defense also protects against damage types that bypass vanilla armor. */
     public static void onPlayerDamage(LivingDamageEvent.Pre event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             PlayerRpgData data = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
             float multiplier = RpgGameplayEffects.damageMultiplier(data.defense());
             event.setNewDamage(event.getNewDamage() * multiplier);
+        }
+    }
+
+    /** Luck adds extra resource drops when a player mines supported ore blocks. */
+    public static void onOreDrops(BlockDropsEvent event) {
+        if (event.getBreaker() instanceof ServerPlayer player) {
+            PlayerRpgData data = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+            RpgGameplayEffects.applyMiningLuckDrops(event, data);
         }
     }
 

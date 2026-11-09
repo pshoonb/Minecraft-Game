@@ -1,9 +1,10 @@
 # RPG Core 0.3.0 Prototype Acceptance Checklist
 
-## Build and artifact trust
+## Build and launch
 - [ ] Java 21 / NeoForge 21.1.265 build succeeds.
 - [ ] Build artifact contains the mod JAR and SHA256SUMS.txt.
 - [ ] SHA-256 listed in the workflow summary matches the downloaded JAR.
+- [ ] Client and dedicated server both start.
 
 ## Progression and persistence
 - [ ] RPG level follows vanilla experience level.
@@ -18,11 +19,19 @@
 - [ ] Health increases maximum health.
 - [ ] Defense reduces ordinary, fire/burning, and explosion damage and reduces explosion knockback.
 - [ ] Mining Speed increases general block-break speed and suitable-tool mining efficiency.
-- [ ] Luck increases vanilla Luck; verify using a loot table that reads player Luck.
+- [ ] Luck adds extra coal, diamond, emerald, lapis, redstone, copper, iron, gold, quartz, and ancient-debris resource drops.
+- [ ] Silk Touch ore-block drops are not duplicated by Mining Luck.
+- [ ] Fortune output is preserved when Mining Luck adds copies of the calculated resource drops.
 - [ ] Speed increases movement speed on client and server.
-- [ ] Jump Height increases actual jump height on client and server.
+- [ ] Jump Height increases actual jump height and simultaneously increases safe-fall distance and reduces fall damage.
 - [ ] Repeated application does not stack duplicate modifiers.
 - [ ] Soft-cap curve has no 10,000-point hard cap.
+
+## Allocation buttons
+- [ ] +1 allocates one point.
+- [ ] +10 allocates up to ten points.
+- [ ] +100 allocates up to one hundred points.
+- [ ] When fewer points remain than requested, each button spends all remaining points rather than rejecting the allocation.
 
 ## Multiplayer isolation
 - [ ] Two players have independent attributes and effects.
