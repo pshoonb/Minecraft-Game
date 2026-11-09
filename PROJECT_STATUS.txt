@@ -14,7 +14,7 @@ Implemented in source:
 - Free attribute reset.
 - Server-authoritative attribute allocation and reset.
 - Per-player attachment persistence and UUID-checked client sync.
-- Attribute screen displays each attribute's allocated points and calculated total effect.
+- Attribute screen fills the game window with a responsive two-column layout; it displays all eight attributes, their allocated points, and calculated effects. The inventory-screen button is the only entry point; the legacy keyboard mapping has been removed.
 - Strength adds the cumulative 2/x result as flat Minecraft damage points to player-caused damage.
 - Defense reduces all damage received by players with an asymptotic 80% soft cap.
 - Health increases maximum health and heals by the same actual amount when maximum health rises.
@@ -36,7 +36,7 @@ Implemented in source:
 
 Limitations / not yet implemented:
 - Luck's loot-pool and deterministic-entry coverage is scoped to player-caused living-entity loot contexts. Pools with zero configured base rolls do not receive the extra roll. The extra roll does not alter pool conditions, entry weights, item counts, or loot functions.
-- No dedicated in-game balance test has been run; the build and a multiplayer play test are still required.
+- No dedicated in-game GUI test has been run; verify the full-window layout at different GUI scales and confirm the inventory button is the only way to open the screen.
 - Exploration, quest, gathering, monster scaling, equipment and loot systems remain out of scope.
 
 Implementation notes:

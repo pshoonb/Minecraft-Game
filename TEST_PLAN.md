@@ -18,7 +18,12 @@
 - [ ] Each attribute row displays the allocated point count and an effect description.
 - [ ] Experience Loot displays a dynamic percentage using the same provisional per-point constant as the server calculation.
 - [ ] The seven other attributes describe their intended gameplay effect and explicitly state that numeric conversion is not implemented yet.
-- [ ] The expanded panel remains readable at common GUI scales in Simplified Chinese and English.
+- [ ] The RPG Attributes screen fills the available game window instead of displaying a fixed 410x236 center panel.
+- [ ] The responsive two-column layout keeps all eight attributes, allocation controls, effect text, reset and back controls visible at common window sizes and GUI scales.
+- [ ] The layout remains readable in Simplified Chinese and English at multiple GUI scales and window aspect ratios.
+- [ ] The inventory screen button opens the full-window RPG Attributes screen.
+- [ ] The Back button and Escape return to the inventory screen that opened the RPG Attributes screen.
+- [ ] No P-key or other key mapping opens the RPG Attributes screen; the old key mapping is absent from Controls.
 - [ ] Attribute attachment data persists through logout/login, death/respawn and server restart.
 
 ## Combat participation and offline eligibility

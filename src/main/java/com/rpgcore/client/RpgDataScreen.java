@@ -15,23 +15,31 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Locale;
 
-/** Player level, allocated points, and the calculated effect of each attribute. */
+/** Full-window player level, attribute allocation, and attribute effects screen. */
 public final class RpgDataScreen extends Screen {
-    private static final int PANEL_WIDTH = 410;
-    private static final int PANEL_HEIGHT = 236;
-    private static final int COLUMN_WIDTH = 198;
-    private static final int ROW_HEIGHT = 34;
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
+    private static final int GRID_COLUMNS = 2;
+    private static final int GRID_ROWS = 4;
 
     private final Screen parentScreen;
     private final StringWidget[] valueLabels = new StringWidget[ATTRIBUTES.length];
     private final StringWidget[] effectLabels = new StringWidget[ATTRIBUTES.length];
+    private final int[] cardXs = new int[ATTRIBUTES.length];
+    private final int[] cardYs = new int[ATTRIBUTES.length];
+    private final int[] cardWidths = new int[ATTRIBUTES.length];
+    private final int[] cardHeights = new int[ATTRIBUTES.length];
+
     private StringWidget levelLabel;
     private StringWidget pointsLabel;
     private StringWidget waitingLabel;
     private PlayerRpgData lastDisplayedData;
+    private int contentMargin;
+    private int headerBottom;
+    private int resetButtonY;
 
-    public RpgDataScreen() { this(null); }
+    public RpgDataScreen() {
+        this(null);
+    }
 
     public RpgDataScreen(Screen parentScreen) {
         super(Component.translatable("screen.rpgcore.title"));
@@ -40,52 +48,98 @@ public final class RpgDataScreen extends Screen {
 
     @Override
     protected void init() {
-        int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - PANEL_HEIGHT) / 2;
+        boolean compact = height < 260;
+        boolean veryCompact = height < 200;
+        contentMargin = Math.min(18, Math.max(8, width / 32));
+        int columnGap = Math.min(18, Math.max(6, width / 40));
+        int contentWidth = Math.max(1, width - contentMargin * 2 - columnGap);
+        int columnWidth = contentWidth / GRID_COLUMNS;
 
-        addText(left + 8, top + 7, PANEL_WIDTH - 16,
+        int titleY = veryCompact ? 3 : compact ? 5 : 13;
+        int subtitleY = veryCompact ? 15 : compact ? 18 : 30;
+        int infoY = veryCompact ? 28 : compact ? 32 : 50;
+        int waitingY = infoY;
+        headerBottom = veryCompact ? 44 : compact ? 54 : 80;
+
+        addText(contentMargin + 4, titleY, width - 2 * contentMargin - 8,
                 Component.translatable("screen.rpgcore.title"), 0xFFFFD778, true);
-        addText(left + 8, top + 21, PANEL_WIDTH - 16,
+        addText(contentMargin + 4, subtitleY, width - 2 * contentMargin - 8,
                 Component.translatable("screen.rpgcore.subtitle"), 0xFFD5CBBB, true);
 
-        levelLabel = addText(left + 12, top + 37, 180,
+        int infoSplit = Math.min(190, Math.max(120, width / 3));
+        levelLabel = addText(contentMargin + 8, infoY, infoSplit - 8,
                 Component.translatable("screen.rpgcore.level", "..."), 0xFFF0E9DC, false);
-        pointsLabel = addText(left + 12, top + 50, PANEL_WIDTH - 24,
-                Component.translatable("screen.rpgcore.points", "...", "..."), 0xFFFFD778, false);
-        waitingLabel = addText(left + 12, top + 65, PANEL_WIDTH - 24,
+        pointsLabel = addText(contentMargin + infoSplit, infoY,
+                Math.max(1, width - 2 * contentMargin - infoSplit),
+                Component.translatable("screen.rpgcore.points", "...", "..."),
+                0xFFFFD778, false);
+        waitingLabel = addText(contentMargin + 8, waitingY,
+                width - 2 * contentMargin - 16,
                 Component.translatable("screen.rpgcore.waiting"), 0xFFFFD778, false);
 
-        for (int i = 0; i < ATTRIBUTES.length; i++) {
-            final PlayerAttribute attribute = ATTRIBUTES[i];
-            int row = i / 2;
-            int column = i % 2;
-            int cellX = left + 7 + column * COLUMN_WIDTH;
-            int rowY = top + 79 + row * ROW_HEIGHT;
+        resetButtonY = height - (compact ? 25 : 29);
+        int footerTop = resetButtonY - 8;
+        int availableGridHeight = Math.max(4, footerTop - headerBottom - 8);
+        int rowHeight = Math.max(20, Math.min(compact ? 48 : 84, availableGridHeight / GRID_ROWS));
+        int gridTop = headerBottom
+                + Math.max(0, (availableGridHeight - rowHeight * GRID_ROWS) / 2);
 
-            addText(cellX, rowY + 2, 76,
+        for (int i = 0; i < ATTRIBUTES.length; i++) {
+            PlayerAttribute attribute = ATTRIBUTES[i];
+            int row = i / GRID_COLUMNS;
+            int column = i % GRID_COLUMNS;
+            int cellX = contentMargin + column * (columnWidth + columnGap);
+            int cellY = gridTop + row * rowHeight;
+
+            cardXs[i] = cellX;
+            cardYs[i] = cellY;
+            cardWidths[i] = columnWidth;
+            cardHeights[i] = rowHeight;
+
+            boolean tightRow = rowHeight < 26;
+            int innerTop = cellY + (tightRow ? 0 : (rowHeight - 26) / 2);
+            int buttonWidth = Math.max(20, Math.min(26, (columnWidth - 18) / 7));
+            int plusOneWidth = Math.max(18, buttonWidth - 2);
+            int buttonGap = 3;
+            int plusTenX = cellX + columnWidth - 7 - buttonWidth;
+            int plusOneX = plusTenX - buttonGap - plusOneWidth;
+            int valueWidth = Math.min(42, Math.max(28, columnWidth / 5));
+            int valueX = plusOneX - 4 - valueWidth;
+            int nameWidth = Math.max(40, valueX - (cellX + 7) - 3);
+            int firstLineY = innerTop + (tightRow ? 0 : 2);
+            int effectY = innerTop + (tightRow ? 10 : 14);
+            int buttonHeight = tightRow ? Math.max(12, rowHeight - 2) : 14;
+
+            addText(cellX + 7, firstLineY, nameWidth,
                     Component.translatable("screen.rpgcore.stat." + attribute.serializedName()),
                     0xFFF0E9DC, false);
-            valueLabels[i] = addText(cellX + 76, rowY + 2, 49,
+            valueLabels[i] = addText(valueX, firstLineY, valueWidth,
                     Component.translatable("screen.rpgcore.stat.points", "0"),
                     0xFFFFD778, false);
-            effectLabels[i] = addText(cellX, rowY + 17, COLUMN_WIDTH - 8,
+            effectLabels[i] = addText(cellX + 7, effectY, columnWidth - 14,
                     Component.translatable("screen.rpgcore.effect." + attribute.serializedName()),
                     0xFFB8B0A2, false);
 
             addRenderableWidget(Button.builder(Component.literal("+1"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 1)))
-                    .bounds(cellX + 126, rowY, 29, 16).build());
+                    .bounds(plusOneX, innerTop, plusOneWidth, buttonHeight).build());
 
             addRenderableWidget(Button.builder(Component.literal("+10"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 10)))
-                    .bounds(cellX + 157, rowY, 34, 16).build());
+                    .bounds(plusTenX, innerTop, buttonWidth, buttonHeight).build());
         }
 
+        int totalFooterWidth = 260;
+        int footerLeft = (width - totalFooterWidth) / 2;
         addRenderableWidget(Button.builder(Component.translatable("screen.rpgcore.reset"),
                 button -> PacketDistributor.sendToServer(new ResetAttributesPayload()))
-                .bounds(left + 12, top + 215, 140, 16).build());
+                .bounds(footerLeft, resetButtonY, 150, 18).build());
+
+        addRenderableWidget(Button.builder(Component.translatable("gui.back"),
+                button -> onClose())
+                .bounds(footerLeft + 160, resetButtonY, 100, 18).build());
 
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
@@ -93,7 +147,11 @@ public final class RpgDataScreen extends Screen {
     private StringWidget addText(int x, int y, int widgetWidth,
                                  Component message, int color, boolean centered) {
         StringWidget widget = new StringWidget(x, y, widgetWidth, 10, message, font).setColor(color);
-        if (centered) widget.alignCenter(); else widget.alignLeft();
+        if (centered) {
+            widget.alignCenter();
+        } else {
+            widget.alignLeft();
+        }
         return addRenderableOnly(widget);
     }
 
@@ -138,16 +196,32 @@ public final class RpgDataScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, width, height, 0xFF0D0C0A);
-        int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - PANEL_HEIGHT) / 2;
-        graphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xFF1B1A18);
-        graphics.fill(left, top, left + PANEL_WIDTH, top + 2, 0xFFE0B45C);
-        graphics.fill(left + 4, top + 4, left + PANEL_WIDTH - 4, top + PANEL_HEIGHT - 4, 0xFF3B3022);
-        graphics.fill(left + 6, top + 6, left + PANEL_WIDTH - 6, top + PANEL_HEIGHT - 6, 0xFF171615);
+        graphics.fill(0, 0, width, height, 0xFF0D0E10);
+        graphics.fill(0, 0, width, 3, 0xFFE0B45C);
+
+        graphics.fill(contentMargin - 4, 7, width - contentMargin + 4,
+                height - 7, 0xFF171819);
+        graphics.fill(contentMargin - 4, 7, width - contentMargin + 4,
+                8, 0xFF5A4931);
+        graphics.fill(contentMargin, headerBottom - 1, width - contentMargin,
+                headerBottom + 1, 0xFF5A4931);
+        graphics.fill(contentMargin, resetButtonY - 7, width - contentMargin,
+                resetButtonY - 6, 0xFF39332A);
+
+        for (int i = 0; i < ATTRIBUTES.length; i++) {
+            int x = cardXs[i];
+            int y = cardYs[i];
+            int cardWidth = cardWidths[i];
+            int cardHeight = cardHeights[i];
+            graphics.fill(x, y, x + cardWidth, y + cardHeight, 0xFF292723);
+            graphics.fill(x + 1, y + 2, x + cardWidth - 1, y + cardHeight - 1, 0xFF1D1C1A);
+            graphics.fill(x + 2, y + 2, x + cardWidth - 2, y + 3, 0xFF625037);
+        }
 
         boolean hasData = ClientRpgDataCache.hasServerData();
         waitingLabel.visible = !hasData;
+        levelLabel.visible = hasData;
+        pointsLabel.visible = hasData;
         if (hasData) {
             PlayerRpgData data = ClientRpgDataCache.get();
             levelLabel.setMessage(Component.translatable("screen.rpgcore.level", data.rpgLevel()));
@@ -155,14 +229,19 @@ public final class RpgDataScreen extends Screen {
                     data.availableAttributePoints(), data.totalAttributePoints()));
             updateAttributeRows(data);
         }
+
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
     public void onClose() {
-        if (minecraft != null) minecraft.setScreen(parentScreen);
+        if (minecraft != null) {
+            minecraft.setScreen(parentScreen);
+        }
     }
 
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() {
+        return false;
+    }
 }

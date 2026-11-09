@@ -1,6 +1,4 @@
 {
-  "key.rpgcore.open_menu": "打开 RPG Core 菜单",
-  "key.categories.rpgcore": "RPG Core",
   "screen.rpgcore.title": "RPG 核心",
   "screen.rpgcore.subtitle": "RPG 等级与原版玩家等级同步",
   "screen.rpgcore.level": "玩家等级：%s",
