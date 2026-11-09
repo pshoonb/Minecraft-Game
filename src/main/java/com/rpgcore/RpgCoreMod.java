@@ -17,7 +17,7 @@ public final class RpgCoreMod {
     public RpgCoreMod(IEventBus modEventBus, ModContainer modContainer) {
         ModAttachments.register(modEventBus);
         modEventBus.addListener(NetworkHandler::registerPayloads);
-        modContainer.registerConfig(ModConfig.Type.COMMON, RpgCoreConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.SERVER, RpgCoreConfig.SPEC);
 
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerRespawn);
