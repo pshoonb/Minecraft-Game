@@ -17,7 +17,9 @@
 ## Seven gameplay attributes
 - [ ] Strength increases attack damage.
 - [ ] Health increases maximum health.
-- [ ] Defense reduces ordinary, fire/burning, and explosion damage and reduces explosion knockback.\n- [ ] At more than 60% defense reduction, raw hits below the scaled threshold are cancelled before armor durability or absorption is consumed; intentional bypass-invulnerability damage remains unaffected.\n- [ ] Defense reduction approaches 90%, and the immunity threshold approaches 15 raw damage.
+- [ ] Defense reduces ordinary, fire/burning, and explosion damage and reduces explosion knockback.
+- [ ] At more than 60% defense reduction, raw hits below the scaled threshold are cancelled before armor durability or absorption is consumed; intentional bypass-invulnerability damage remains unaffected.
+- [ ] Defense reduction approaches 90%, and the immunity threshold approaches 15 raw damage.
 - [ ] Mining Speed increases general block-break speed and suitable-tool mining efficiency.
 - [ ] Luck adds extra coal, diamond, emerald, lapis, redstone, copper, iron, gold, quartz, and ancient-debris resource drops.
 - [ ] Silk Touch ore-block drops are not duplicated by Mining Luck.
