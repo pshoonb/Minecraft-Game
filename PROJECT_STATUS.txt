@@ -1,4 +1,4 @@
-RPG Core Prototype 0.2.1
+RPG Core Prototype 0.2.4
 
 Target:
 - Minecraft Java Edition 1.21.1
@@ -10,21 +10,26 @@ Implemented in source:
 - RPG level mirrors the vanilla player experience level.
 - Vanilla level changes synchronize to the RPG attribute screen.
 - Attribute points are based on the highest vanilla level reached, so spending vanilla levels does not revoke earned points.
-- Five assignable attributes: Strength, Agility, Constitution, Intelligence, Spirit.
+- Six assignable attributes: Strength, Agility, Constitution, Intelligence, Spirit, Experience Loot.
 - Agreed cumulative attribute-point formula.
 - Free attribute reset.
 - Server-authoritative attribute allocation and reset.
 - Per-player attachment persistence and UUID-checked client sync.
 - Inventory-screen button opens the attribute panel; the conflicting P-key binding has been removed.
 - Attribute panel supports English and Simplified Chinese localization.
-- Removed diagnostic counter UI/network payload and separate RPG XP progression.
+- Experience Loot participation tracking refreshes on successful player damage and expires after 60 seconds.
+- Current highest eligible online participant value is snapshotted at the entity's death.
+- Each LivingExperienceDropEvent batch is replaced by custom XP orbs using the agreed per-orb denomination calculation.
+- Nearby pre-existing XP orbs are never searched or rewritten; same-denomination vanilla merging only stacks orb count.
+- Multi-batch entity XP drops, including Ender Dragon waves, are processed batch by batch.
 
 Not implemented:
-- Attribute-to-gameplay conversion (health/attack/armor/speed etc.); exact ratios not approved.
+- Attribute-to-gameplay conversion (health/attack/armor/speed etc.) for the other five attributes; exact ratios not approved.
+- Actual attribute contribution values in the attribute panel.
 - Exploration, quest, and gathering-specific rewards.
 - Monster level scaling, equipment, loot, quests, exploration content.
 - Final balancing and release packaging.
 
 Validation:
-- Source changes are committed to the fix branch.
+- Source and documentation changes are committed to main.
 - A fresh Gradle/NeoForge build and in-game test are still required for this revision.
