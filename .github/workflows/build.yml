@@ -7,8 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Required for creating GitHub Releases from this repository.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: rpgcore-build-${{ github.ref }}
@@ -57,6 +58,39 @@ jobs:
           path: build/libs/*.jar
           if-no-files-found: error
           retention-days: 14
+
+      # Publish only successful builds from pushes to main.
+      # Pull requests and manual workflow_dispatch runs do not publish.
+      - name: Publish GitHub Release
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          MOD_VERSION="$(sed -n 's/^mod_version=//p' gradle.properties | head -n 1 | tr -d '\r')"
+          if [[ -z "$MOD_VERSION" ]]; then
+            echo "::error::Could not read mod_version from gradle.properties."
+            exit 1
+          fi
+
+          mapfile -t JARS < <(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | sort)
+          if [[ "${#JARS[@]}" -ne 1 ]]; then
+            echo "::error::Expected exactly one distributable JAR in build/libs; found ${#JARS[@]}."
+            printf '%s\n' "${JARS[@]}"
+            exit 1
+          fi
+
+          JAR_PATH="${JARS[0]}"
+          CHECKSUM_PATH="${JAR_PATH}.sha256"
+          sha256sum "$JAR_PATH" > "$CHECKSUM_PATH"
+
+          TAG="v${MOD_VERSION}-build.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" "$JAR_PATH" "$CHECKSUM_PATH" \
+            --title "$TAG" \
+            --notes "自动构建发布。\n\nSource commit: ${GITHUB_SHA}\nBuild: ${GITHUB_RUN_NUMBER}" \
+            --latest
 
       - name: Upload build diagnostics
         if: always()
