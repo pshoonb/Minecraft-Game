@@ -13,24 +13,26 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Applies the seven allocated RPG attributes to vanilla player mechanics.
  *
- * Attribute growth is linear for the first 25 points, then follows a
- * logarithmic soft cap. The curve never hard-caps, so late-game investment
+ * Attribute growth is linear for the first 25 effective points, then follows
+ * a logarithmic soft cap. The curve never hard-caps, so late-game investment
  * continues to improve the character.
  */
 public final class RpgGameplayEffects {
     private static final double SOFT_CAP_START = 25.0D;
     private static final double SOFT_CAP_SCALE = 15.0D;
 
-    private static final double STRENGTH_DAMAGE_PER_POINT = 0.75D;
-    private static final double HEALTH_PER_POINT = 1.0D;
-    private static final double DEFENSE_ARMOR_PER_POINT = 0.60D;
-    private static final double MINING_SPEED_PER_POINT = 0.05D;
-    private static final double MINING_EFFICIENCY_PER_POINT = 0.75D;
-    private static final double LUCK_PER_POINT = 0.50D;
-    private static final double SPEED_PER_POINT = 0.03D;
-    private static final double JUMP_VELOCITY_PER_POINT = 0.025D;
+    // Tuning is designed around the practical level 100-150 range.
+    // The first 25 effective points remain fully useful for early-game feedback.
+    private static final double STRENGTH_DAMAGE_PER_POINT = 0.10D;
+    private static final double HEALTH_PER_POINT = 0.25D;
+    private static final double DEFENSE_ARMOR_PER_POINT = 0.15D;
+    private static final double MINING_SPEED_PER_POINT = 0.01D;
+    private static final double MINING_EFFICIENCY_PER_POINT = 0.15D;
+    private static final double LUCK_PER_POINT = 0.10D;
+    private static final double SPEED_PER_POINT = 0.005D;
+    private static final double JUMP_VELOCITY_PER_POINT = 0.005D;
 
-    private static final double MAX_UNIVERSAL_DAMAGE_REDUCTION = 0.65D;
+    private static final double MAX_UNIVERSAL_DAMAGE_REDUCTION = 0.40D;
     private static final double MAX_BURNING_TIME_REDUCTION = 0.60D;
     private static final double MAX_EXPLOSION_KNOCKBACK_RESISTANCE = 0.70D;
 
@@ -68,26 +70,30 @@ public final class RpgGameplayEffects {
         replaceModifier(player, Attributes.MAX_HEALTH, HEALTH_MAX_HEALTH_ID,
                 health * HEALTH_PER_POINT, AttributeModifier.Operation.ADD_VALUE);
 
-        // Vanilla armor protects against most ordinary hits, but damage types
-        // tagged bypasses_armor (including many fire effects) ignore it. Defense
-        // also grants a separate all-damage reduction in LivingDamageEvent.Pre.
+        // The direct armor bonus is capped, while other defense benefits
+        // continue to scale after vanilla armor reaches its effective range.
         replaceModifier(player, Attributes.ARMOR, DEFENSE_ARMOR_ID,
-                Math.min(30.0D, defense * DEFENSE_ARMOR_PER_POINT), AttributeModifier.Operation.ADD_VALUE);
-        double burnReduction = MAX_BURNING_TIME_REDUCTION * defense / (defense + 20.0D);
+                Math.min(20.0D, defense * DEFENSE_ARMOR_PER_POINT),
+                AttributeModifier.Operation.ADD_VALUE);
+
+        double burnReduction = MAX_BURNING_TIME_REDUCTION * defense / (defense + 30.0D);
         replaceModifier(player, Attributes.BURNING_TIME, DEFENSE_BURNING_TIME_ID,
                 -burnReduction, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+
         double explosionKnockback = MAX_EXPLOSION_KNOCKBACK_RESISTANCE
-                * defense / (defense + 25.0D);
+                * defense / (defense + 40.0D);
         replaceModifier(player, Attributes.EXPLOSION_KNOCKBACK_RESISTANCE,
                 DEFENSE_EXPLOSION_KNOCKBACK_ID, explosionKnockback,
                 AttributeModifier.Operation.ADD_VALUE);
 
-        // BLOCK_BREAK_SPEED multiplies the overall block-breaking speed.
-        // MINING_EFFICIENCY adds speed when the held tool is suitable for the block.
+        // BLOCK_BREAK_SPEED affects general breaking speed. MINING_EFFICIENCY
+        // adds extra speed when the held tool is suitable for the block.
         replaceModifier(player, Attributes.BLOCK_BREAK_SPEED, MINING_SPEED_ID,
-                miningSpeed * MINING_SPEED_PER_POINT, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+                miningSpeed * MINING_SPEED_PER_POINT,
+                AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
         replaceModifier(player, Attributes.MINING_EFFICIENCY, MINING_EFFICIENCY_ID,
-                miningSpeed * MINING_EFFICIENCY_PER_POINT, AttributeModifier.Operation.ADD_VALUE);
+                miningSpeed * MINING_EFFICIENCY_PER_POINT,
+                AttributeModifier.Operation.ADD_VALUE);
 
         replaceModifier(player, Attributes.LUCK, LUCK_ID,
                 luck * LUCK_PER_POINT, AttributeModifier.Operation.ADD_VALUE);
@@ -97,16 +103,16 @@ public final class RpgGameplayEffects {
         player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
     }
 
-    /** Reduces all damage types after vanilla armor/enchantment reductions. */
+    /** Reduces final damage after vanilla armor and enchantment handling. */
     public static float damageMultiplier(long defensePoints) {
         double defense = effectiveAttributePoints(defensePoints);
-        double reduction = MAX_UNIVERSAL_DAMAGE_REDUCTION * defense / (defense + 30.0D);
+        double reduction = MAX_UNIVERSAL_DAMAGE_REDUCTION * defense / (defense + 50.0D);
         return (float) (1.0D - reduction);
     }
 
     /**
-     * Modifies the upward velocity at the actual jump event.
-     * Called on both the local client prediction and logical server player.
+     * Modifies upward velocity at the actual jump event.
+     * Called on both local-client prediction and the logical server player.
      */
     public static void applyJumpHeight(Player player, PlayerRpgData data) {
         double jumpScale = effectiveAttributePoints(data.jumpHeight())
@@ -122,8 +128,8 @@ public final class RpgGameplayEffects {
     }
 
     /**
-     * A true soft cap: the first 25 points are fully effective; later points
-     * have diminishing logarithmic returns but never stop contributing.
+     * First 25 points are linear. Beyond that each point has diminishing
+     * returns, but the function has no hard cap.
      */
     public static double effectiveAttributePoints(long points) {
         double safePoints = Math.max(0L, points);

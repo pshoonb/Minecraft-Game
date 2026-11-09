@@ -6,46 +6,43 @@ Target:
 - Java 21
 
 Implemented:
-- RPG level mirrors vanilla player experience level.
-- Attribute points use the agreed cumulative formula and are preserved when vanilla levels are spent.
-- Exactly seven attributes: Strength, Health, Defense, Mining Speed, Luck, Speed, and Jump Height.
-- Free reset, server-authoritative allocation, per-player persistence, UUID-checked sync.
-- P-key attribute GUI with Simplified Chinese and English.
-- True soft-cap curve: first 25 points are linear; later points use logarithmic diminishing returns without a hard point cap.
-- The same uniquely identified attribute modifiers are installed on server and owning client.
-- Jump Height adjusts local client prediction and server-side player jump velocity.
-- Defense applies a final damage reduction after vanilla armor/enchantment reductions, including damage types that bypass armor.
-- Defense also reduces burning duration and explosion knockback.
-- Mining Speed affects both overall block-break speed and mining efficiency when using a suitable tool.
+- Seven agreed attributes and the unchanged level-point formula.
+- Level 100-150 is the primary balance target.
+- A logarithmic soft-cap curve: first 25 effective points are linear; later points continue to add diminishing returns without a hard cap.
+- Same attribute modifiers on the authoritative server and owning client.
+- Jump velocity adjustment on local prediction and server.
+- Defense adds armor, final damage reduction after vanilla armor/enchantment handling, reduced burning time, and explosion knockback resistance.
+- Mining Speed affects both general block-break speed and suitable-tool mining efficiency.
+- Per-player persistent data, server-authoritative allocation, UUID-checked sync, and free reset remain.
 
-Effect tuning per effective point:
-- Strength: +0.75 attack damage.
-- Health: +1.0 maximum health.
-- Defense: +0.60 armor (modifier capped at +30), plus a soft-capped all-damage reduction approaching 65%, burning-time reduction approaching 60%, and explosion knockback resistance approaching 70%.
-- Mining Speed: +5% block-break speed and +0.75 mining efficiency.
-- Luck: +0.50 vanilla Luck attribute.
-- Speed: +3% movement speed.
-- Jump Height: +2.5% upward jump velocity.
+Current tuned values per effective attribute point:
+- Strength: +0.10 attack damage.
+- Health: +0.25 maximum health.
+- Defense: +0.15 armor (direct armor bonus capped at +20), plus up to 40% additional final damage reduction, 60% burning-time reduction, and 70% explosion knockback resistance.
+- Mining Speed: +1% block-break speed and +0.15 mining efficiency.
+- Luck: +0.10 vanilla Luck.
+- Speed: +0.5% movement speed.
+- Jump Height: +0.5% upward jump velocity.
 
-Soft-cap function:
-- E(p) = p when p <= 25.
-- E(p) = 25 + 15 * ln(1 + (p - 25) / 15) when p > 25.
-- There is no 10,000-point hard cap; late investment continues to add diminishing returns.
+Progression reference:
+- Level 100: 7,550 total attribute points.
+- Level 150: 15,675 total attribute points.
+- When evenly divided among seven attributes, effective points are approximately 89 at level 100 and 100 at level 150.
+- The soft cap continues to grow beyond the practical level range; there is no 10,000-point hard cap.
 
 Notes:
-- Vanilla Luck only affects loot tables/mechanics that actually read the player's Luck value.
-- Defense's extra final-damage reduction is applied after the vanilla armor/enchantment stage.
+- Vanilla Luck only affects loot tables/mechanics that read the player's Luck value.
+- Actual mining depends on tool/block suitability; Jump Height changes launch velocity and jump height is nonlinear.
 - The agreed level reward formula is unchanged.
 
-Legacy data upgrade:
-- Previously allocated Strength is retained.
-- Removed prototype allocations (Agility, Constitution, Intelligence, Spirit) are refunded.
-- Current level, historical highest level, and total earned points remain.
+Legacy migration:
+- Strength allocation is retained.
+- Removed prototype attribute allocations are refunded.
+- Current level, highest level, and total earned points remain.
 
 Not implemented:
-- Final balancing after in-game playtesting.
-- Exploration, quests, gathering rewards, monster scaling, equipment, or loot systems.
-- Full compatibility testing with other gameplay mods and multiplayer stress testing.
+- Final in-game balance validation and full compatibility testing.
 
 Validation required:
-- GitHub Actions build and in-game tests for all seven effects, reset, level spending, login/respawn persistence, and multiplayer isolation.
+- Test all seven effects in-game, including ordinary/fire/explosion damage.
+- Test reset, level spending, login/respawn persistence, and multiplayer isolation.

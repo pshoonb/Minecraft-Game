@@ -49,12 +49,25 @@ jobs:
       - name: Build mod
         run: gradle --no-daemon clean build --stacktrace
 
-      - name: Upload mod JAR
+      - name: Generate SHA-256 checksum
+        if: success()
+        shell: bash
+        run: |
+          cd build/libs
+          sha256sum *.jar > SHA256SUMS.txt
+          {
+            echo "### Mod JAR SHA-256"
+            cat SHA256SUMS.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload mod JAR and checksum
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: rpgcore-prototype-${{ github.run_number }}
-          path: build/libs/*.jar
+          path: |
+            build/libs/*.jar
+            build/libs/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
 
