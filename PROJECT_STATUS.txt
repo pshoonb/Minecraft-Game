@@ -22,7 +22,7 @@ Implemented in source:
 - Movement Speed uses a transient multiplicative-base movement-speed modifier.
 - Jump Height adds launch velocity corresponding to the cumulative height formula.
 - Luck adds 1-15 extra items to eligible ore-block drops. Base weights are 150, 145, ... 80; the weight exponent flattens with current Luck so larger quantities become relatively more likely.
-- Luck multiplies vanilla worn-equipment drop chances by its cumulative percentage formula.
+- Luck multiplies ordinary mob loot random-chance conditions and worn-equipment drop chances by its cumulative percentage formula. The probability hook scales only random-chance rolls, leaving item counts and loot-table weights unchanged.
 - Experience Loot reuses the Mining Speed cumulative percentage formula.
 - Each LivingExperienceDropEvent batch uses the agreed per-orb denomination calculation:
   T' = floor(T * (1 + bonusPercent / 100))
@@ -34,8 +34,7 @@ Implemented in source:
 - Nearby pre-existing XP orbs are not searched or rewritten; multi-batch XP drops are processed separately.
 
 Limitations / not yet implemented:
-- The generic entity loot-table item probability is not modified. NeoForge 21.1.265 exposes a mutable chance for worn-equipment drops, which is handled above, but does not expose a generic mutable base probability for every item-drop condition.
-- Luck does not yet adjust every custom or vanilla loot-table condition that lacks a direct chance event.
+- Luck affects vanilla random-chance and random-chance-with-enchanted-bonus conditions in living-entity loot tables, plus worn-equipment drop chances. Loot-table conditions that do not use these chance predicates (for example, deterministic predicates or custom mod-specific logic) are not rewritten.
 - No dedicated in-game balance test has been run; the build and a multiplayer play test are still required.
 - Exploration, quest, gathering, monster scaling, equipment and loot systems remain out of scope.
 

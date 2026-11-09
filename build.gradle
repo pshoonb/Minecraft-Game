@@ -35,11 +35,16 @@ neoForge {
 }
 
 repositories {
-    // No third-party runtime repositories are required by this prototype.
+    maven {
+        name = "SpongePowered"
+        url = "https://repo.spongepowered.org/repository/maven-public/"
+    }
 }
 
 dependencies {
-    // NeoForge is supplied by ModDevGradle. No additional gameplay libraries are used.
+    // NeoForge supplies Mixin at runtime; compile against it and generate mixin metadata.
+    compileOnly "org.spongepowered:mixin:0.8.5"
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
 }
 
 processResources {
@@ -71,7 +76,8 @@ jar {
             'Specification-Vendor': 'RPG Core Project',
             'Specification-Version': '1',
             'Implementation-Title': mod_name,
-            'Implementation-Version': project.version
+            'Implementation-Version': project.version,
+            'MixinConfigs': 'rpgcore.mixins.json'
         ])
     }
 }

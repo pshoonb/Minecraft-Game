@@ -22,7 +22,7 @@
   "screen.rpgcore.effect.mining_speed": "Mining speed +%s%",
   "screen.rpgcore.effect.speed": "Movement speed +%s%",
   "screen.rpgcore.effect.jump_height": "Jump height +%s blocks",
-  "screen.rpgcore.effect.luck": "Extra ore drops; equipment chance +%s%",
+  "screen.rpgcore.effect.luck": "Extra ore drops; mob loot chance +%s%",
   "screen.rpgcore.effect.experience_loot": "Experience bonus +%s%",
   "button.rpgcore.open_panel": "RPG Attributes"
 }

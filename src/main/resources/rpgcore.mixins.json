@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.rpgcore.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "LootItemRandomChanceConditionMixin",
+    "LootItemRandomChanceWithEnchantedBonusConditionMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

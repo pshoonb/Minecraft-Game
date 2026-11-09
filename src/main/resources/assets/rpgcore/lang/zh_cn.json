@@ -22,7 +22,7 @@
   "screen.rpgcore.effect.mining_speed": "挖掘速度 +%s%",
   "screen.rpgcore.effect.speed": "移动速度 +%s%",
   "screen.rpgcore.effect.jump_height": "跳跃高度 +%s 格",
-  "screen.rpgcore.effect.luck": "矿石额外掉落；装备概率 +%s%",
+  "screen.rpgcore.effect.luck": "矿石额外掉落；生物掉落概率 +%s%",
   "screen.rpgcore.effect.experience_loot": "经验增益 +%s%",
   "button.rpgcore.open_panel": "RPG 属性面板"
 }

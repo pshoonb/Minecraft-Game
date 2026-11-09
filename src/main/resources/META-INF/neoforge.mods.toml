@@ -9,6 +9,9 @@ displayName="${mod_name}"
 authors="RPG Core Project"
 description='''An RPG progression prototype with vanilla-linked player levels and freely assignable attributes.'''
 
+[[mixins]]
+config="rpgcore.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
