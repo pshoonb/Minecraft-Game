@@ -6,33 +6,29 @@ import com.rpgcore.progression.RpgProgression;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 
-/** Persistent, per-player RPG state. All mutations are server-owned. */
+/** Persistent per-player RPG attributes, synchronized with the vanilla player level. */
 public record PlayerRpgData(
         int rpgLevel,
-        long experienceProgress,
-        long totalExperience,
+        int highestLevelReached,
         long strength,
         long agility,
         long constitution,
         long intelligence,
         long spirit,
-        boolean progressionInitialized,
-        int diagnosticCounter
+        boolean progressionInitialized
 ) {
     public static final PlayerRpgData EMPTY =
-            new PlayerRpgData(0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, false, 0);
+            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, false);
 
     public static final Codec<PlayerRpgData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.optionalFieldOf("rpg_level", 0).forGetter(PlayerRpgData::rpgLevel),
-            Codec.LONG.optionalFieldOf("rpg_experience_progress", 0L).forGetter(PlayerRpgData::experienceProgress),
-            Codec.LONG.optionalFieldOf("rpg_total_experience", 0L).forGetter(PlayerRpgData::totalExperience),
+            Codec.INT.optionalFieldOf("highest_level_reached", 0).forGetter(PlayerRpgData::highestLevelReached),
             Codec.LONG.optionalFieldOf("strength", 0L).forGetter(PlayerRpgData::strength),
             Codec.LONG.optionalFieldOf("agility", 0L).forGetter(PlayerRpgData::agility),
             Codec.LONG.optionalFieldOf("constitution", 0L).forGetter(PlayerRpgData::constitution),
             Codec.LONG.optionalFieldOf("intelligence", 0L).forGetter(PlayerRpgData::intelligence),
             Codec.LONG.optionalFieldOf("spirit", 0L).forGetter(PlayerRpgData::spirit),
-            Codec.BOOL.optionalFieldOf("progression_initialized", false).forGetter(PlayerRpgData::progressionInitialized),
-            Codec.INT.optionalFieldOf("diagnostic_counter", 0).forGetter(PlayerRpgData::diagnosticCounter)
+            Codec.BOOL.optionalFieldOf("progression_initialized", false).forGetter(PlayerRpgData::progressionInitialized)
     ).apply(instance, PlayerRpgData::new));
 
     public static final StreamCodec<ByteBuf, PlayerRpgData> STREAM_CODEC = StreamCodec.of(
@@ -40,26 +36,32 @@ public record PlayerRpgData(
     );
 
     public PlayerRpgData {
-        rpgLevel = Math.max(0, Math.min(RpgProgression.MAX_LEVEL, rpgLevel));
-        experienceProgress = Math.max(0L, experienceProgress);
-        totalExperience = Math.max(0L, totalExperience);
+        rpgLevel = clampLevel(rpgLevel);
+        highestLevelReached = Math.max(clampLevel(highestLevelReached), rpgLevel);
         strength = nonNegative(strength);
         agility = nonNegative(agility);
         constitution = nonNegative(constitution);
         intelligence = nonNegative(intelligence);
         spirit = nonNegative(spirit);
-        diagnosticCounter = Math.max(0, diagnosticCounter);
     }
 
-    public PlayerRpgData initializeProgression(int startingLevel) {
-        int safeLevel = Math.max(0, Math.min(RpgProgression.MAX_LEVEL, startingLevel));
-        return new PlayerRpgData(safeLevel, 0L, 0L, strength, agility, constitution,
-                intelligence, spirit, true, diagnosticCounter);
+    private static int clampLevel(int level) {
+        return Math.max(0, Math.min(RpgProgression.MAX_LEVEL, level));
     }
 
-    public PlayerRpgData withProgression(int level, long progress, long totalXp) {
-        return new PlayerRpgData(level, progress, totalXp, strength, agility, constitution,
-                intelligence, spirit, true, diagnosticCounter);
+    public PlayerRpgData initializeProgression(int vanillaLevel) {
+        int safeLevel = clampLevel(vanillaLevel);
+        // Preserve previously allocated attributes and their earned-point baseline
+        // when upgrading from the earlier prototype.
+        int previousBaseline = Math.max(rpgLevel, highestLevelReached);
+        return new PlayerRpgData(safeLevel, Math.max(previousBaseline, safeLevel),
+                strength, agility, constitution, intelligence, spirit, true);
+    }
+
+    public PlayerRpgData withVanillaLevel(int vanillaLevel) {
+        int safeLevel = clampLevel(vanillaLevel);
+        return new PlayerRpgData(safeLevel, Math.max(highestLevelReached, safeLevel),
+                strength, agility, constitution, intelligence, spirit, true);
     }
 
     public long allocatedAttributePoints() {
@@ -71,8 +73,9 @@ public record PlayerRpgData(
         return saturatedAdd(total, spirit);
     }
 
+    /** Attribute rewards are based on the highest vanilla level ever reached. */
     public long totalAttributePoints() {
-        return RpgProgression.totalAttributePointsAtLevel(rpgLevel);
+        return RpgProgression.totalAttributePointsAtLevel(highestLevelReached);
     }
 
     public long availableAttributePoints() {
@@ -105,14 +108,8 @@ public record PlayerRpgData(
         return withAttributes(0L, 0L, 0L, 0L, 0L);
     }
 
-    public PlayerRpgData withDiagnosticCounter(int value) {
-        return new PlayerRpgData(rpgLevel, experienceProgress, totalExperience, strength,
-                agility, constitution, intelligence, spirit, progressionInitialized, value);
-    }
-
     private PlayerRpgData withAttributes(long s, long a, long c, long i, long sp) {
-        return new PlayerRpgData(rpgLevel, experienceProgress, totalExperience, s, a, c,
-                i, sp, progressionInitialized, diagnosticCounter);
+        return new PlayerRpgData(rpgLevel, highestLevelReached, s, a, c, i, sp, progressionInitialized);
     }
 
     private static long nonNegative(long value) { return Math.max(0L, value); }
@@ -123,19 +120,17 @@ public record PlayerRpgData(
 
     private static void writeToBuffer(ByteBuf b, PlayerRpgData d) {
         b.writeInt(d.rpgLevel);
-        b.writeLong(d.experienceProgress);
-        b.writeLong(d.totalExperience);
+        b.writeInt(d.highestLevelReached);
         b.writeLong(d.strength);
         b.writeLong(d.agility);
         b.writeLong(d.constitution);
         b.writeLong(d.intelligence);
         b.writeLong(d.spirit);
         b.writeBoolean(d.progressionInitialized);
-        b.writeInt(d.diagnosticCounter);
     }
 
     private static PlayerRpgData readFromBuffer(ByteBuf b) {
-        return new PlayerRpgData(b.readInt(), b.readLong(), b.readLong(), b.readLong(),
-                b.readLong(), b.readLong(), b.readLong(), b.readLong(), b.readBoolean(), b.readInt());
+        return new PlayerRpgData(b.readInt(), b.readInt(), b.readLong(), b.readLong(),
+                b.readLong(), b.readLong(), b.readLong(), b.readBoolean());
     }
 }

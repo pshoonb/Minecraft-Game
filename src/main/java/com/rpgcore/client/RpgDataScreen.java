@@ -12,19 +12,16 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-/** Simple first playable attribute allocation screen. */
+/** Player level and attribute allocation screen. */
 public final class RpgDataScreen extends Screen {
     private static final int PANEL_WIDTH = 390;
     private static final int PANEL_HEIGHT = 300;
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
 
-    private final StringWidget[] nameLabels = new StringWidget[ATTRIBUTES.length];
     private final StringWidget[] valueLabels = new StringWidget[ATTRIBUTES.length];
     private StringWidget levelLabel;
-    private StringWidget xpLabel;
     private StringWidget pointsLabel;
     private StringWidget waitingLabel;
-    private StringWidget diagnosticLabel;
 
     public RpgDataScreen() {
         super(Component.translatable("screen.rpgcore.title"));
@@ -42,17 +39,15 @@ public final class RpgDataScreen extends Screen {
 
         levelLabel = addText(left + 22, top + 55, 340,
                 Component.translatable("screen.rpgcore.level", "..."), 0xFFF0E9DC, false);
-        xpLabel = addText(left + 22, top + 70, 340,
-                Component.translatable("screen.rpgcore.xp", "..."), 0xFFF0E9DC, false);
-        pointsLabel = addText(left + 22, top + 85, 350,
+        pointsLabel = addText(left + 22, top + 75, 350,
                 Component.translatable("screen.rpgcore.points", "...", "..."), 0xFFFFD778, false);
-        waitingLabel = addText(left + 22, top + 103, 340,
+        waitingLabel = addText(left + 22, top + 96, 340,
                 Component.translatable("screen.rpgcore.waiting"), 0xFFFFD778, false);
 
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             final PlayerAttribute attribute = ATTRIBUTES[i];
-            int rowY = top + 126 + i * 24;
-            nameLabels[i] = addText(left + 22, rowY + 5, 145,
+            int rowY = top + 120 + i * 24;
+            addText(left + 22, rowY + 5, 145,
                     Component.translatable("screen.rpgcore.stat." + attribute.serializedName()),
                     0xFFF0E9DC, false);
             valueLabels[i] = addText(left + 172, rowY + 5, 54,
@@ -73,8 +68,6 @@ public final class RpgDataScreen extends Screen {
                 button -> PacketDistributor.sendToServer(new ResetAttributesPayload()))
                 .bounds(left + 22, top + 258, 170, 20).build());
 
-        diagnosticLabel = addText(left + 205, top + 263, 170,
-                Component.translatable("screen.rpgcore.counter", 0), 0xFF9AF0B2, false);
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
 
@@ -100,7 +93,6 @@ public final class RpgDataScreen extends Screen {
         if (hasData) {
             PlayerRpgData data = ClientRpgDataCache.get();
             levelLabel.setMessage(Component.translatable("screen.rpgcore.level", data.rpgLevel()));
-            xpLabel.setMessage(Component.translatable("screen.rpgcore.xp", data.experienceProgress()));
             pointsLabel.setMessage(Component.translatable("screen.rpgcore.points",
                     data.availableAttributePoints(), data.totalAttributePoints()));
 
@@ -109,8 +101,6 @@ public final class RpgDataScreen extends Screen {
             for (int i = 0; i < values.length; i++) {
                 valueLabels[i].setMessage(Component.literal(Long.toString(values[i])));
             }
-            diagnosticLabel.setMessage(Component.translatable(
-                    "screen.rpgcore.counter", data.diagnosticCounter()));
         }
         super.render(graphics, mouseX, mouseY, partialTick);
     }

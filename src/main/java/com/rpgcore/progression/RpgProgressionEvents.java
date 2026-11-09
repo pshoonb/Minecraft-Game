@@ -6,19 +6,16 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 
-/**
- * Vanilla XP pickup also grants RPG XP. The vanilla orb is not cancelled or
- * reduced, so enchanting and the vanilla XP bar remain unchanged.
- */
+/** Mirrors vanilla experience-level changes into the RPG attribute snapshot. */
 @EventBusSubscriber(modid = RpgCoreMod.MOD_ID)
 public final class RpgProgressionEvents {
     private RpgProgressionEvents() {}
 
     @SubscribeEvent
-    public static void onExperienceOrbPickup(PlayerXpEvent.PickupXp event) {
+    public static void onVanillaLevelChange(PlayerXpEvent.LevelChange event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            int value = event.getOrb().getValue();
-            if (value > 0) RpgProgressionService.addExperience(player, value);
+            int resultingLevel = player.experienceLevel + event.getLevels();
+            RpgProgressionService.syncVanillaLevel(player, resultingLevel);
         }
     }
 }
