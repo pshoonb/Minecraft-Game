@@ -70,7 +70,7 @@ MOD_CACHE_DIR = INSTALLER_CACHE_DIR / "ModCache"
 # =====================================================
 
 def choose_game_directory(default_dir: Path):
-    """显示游戏目录选择窗口；Cancel时返回 None。"""
+    """Show the game directory picker; return None if cancelled."""
 
     window = tk.Tk()
     window.title("Select Minecraft Game Directory")
@@ -89,7 +89,7 @@ def choose_game_directory(default_dir: Path):
 
     tk.Label(
         window,
-        text="请Select Minecraft Game Directory：",
+        text="Please select your Minecraft game directory:",
         font=("Segoe UI", 10, "bold")
     ).pack(anchor="w", padx=16, pady=(15, 5))
 
@@ -286,7 +286,7 @@ def check_installer_update():
             "The installer has been updated successfully!\n\n"
             "Backup of the previous version:\n"
             + str(backup_path)
-            + "\n\n点击“确定”后将自动重新启动新版安装器。"
+            + "\n\nClick “OK” to restart the updated installer."
         )
 
         try:
@@ -373,7 +373,7 @@ def find_files():
         raise RuntimeError(
             "Multiple RPG Core JAR files were found in the script folder, so the local fallback cannot be determined:\n\n"
             + names
-            + "\n\n请只保留一个本地备用 JAR，或将旧版移出此目录。"
+            + "\n\nKeep only one local fallback JAR, or move the older files out of this folder."
         )
 
     local_mod = candidates[0] if candidates else None
@@ -403,7 +403,7 @@ def github_request(url, timeout=30):
 
 
 def get_latest_release():
-    """读取公开仓库最新正式 Release，不需要用户 Token。"""
+    """Fetch the latest public GitHub Release without requiring a user token."""
 
     with github_request(GITHUB_RELEASE_API, timeout=30) as response:
         release = json.loads(response.read().decode("utf-8"))
@@ -483,7 +483,7 @@ def get_latest_release():
 
 
 def download_release_mod(release_info):
-    """下载到临时文件，校验通过后才放入缓存。"""
+    """Download to a temporary file and cache it only after verification."""
 
     MOD_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -529,7 +529,7 @@ def download_release_mod(release_info):
 
 
 def get_managed_installed_mod(state):
-    """仅返回状态文件记录过的、仍然有效的已管理模组。"""
+    """Return a valid managed mod recorded in the state file, if one exists."""
 
     record = state.get("managed_mod", {})
     if not isinstance(record, dict):
@@ -1091,7 +1091,7 @@ def main():
     selected_dir = choose_game_directory(DEFAULT_GAME_DIR)
 
     if selected_dir is None:
-        print("用户Cancel安装。", flush=True)
+        print("The user cancelled the installation.", flush=True)
         return
 
     GAME_DIR = selected_dir
@@ -1104,11 +1104,11 @@ def main():
         "Please close TLauncher and Minecraft before continuing.\n\n"
         "Installation directory:\n"
         + str(GAME_DIR)
-        + "\n\n确定继续吗？"
+        + "\n\nContinue?"
     )
 
     if not response:
-        print("用户Cancel安装。", flush=True)
+        print("The user cancelled the installation.", flush=True)
         return
 
     GAME_DIR.mkdir(parents=True, exist_ok=True)
