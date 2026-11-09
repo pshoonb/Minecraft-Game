@@ -3,8 +3,9 @@ package com.rpgcore.data;
 /**
  * The five freely assignable character attributes.
  *
- * <p>These values are intentionally kept separate from Minecraft combat
- * attributes until the gameplay conversion rules are finalized.</p>
+ * <p>Agility and Constitution currently affect vanilla player attributes.
+ * The other values remain saved and allocatable until their gameplay roles
+ * have been finalized.</p>
  */
 public enum PlayerAttribute {
     STRENGTH(0, "strength"),
