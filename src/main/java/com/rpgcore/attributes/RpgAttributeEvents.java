@@ -4,7 +4,7 @@ import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerRpgData;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BlockTags;
+import net.neoforged.neoforge.common.Tags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -107,7 +107,7 @@ public final class RpgAttributeEvents {
      */
     public static void onBlockDrops(BlockDropsEvent event) {
         if (!(event.getBreaker() instanceof ServerPlayer player)
-                || !event.getState().is(BlockTags.ORES)
+                || !event.getState().is(Tags.Blocks.ORES)
                 || event.getDrops().isEmpty()) {
             return;
         }
