@@ -8,29 +8,38 @@ Target:
 Implemented:
 - RPG level mirrors the vanilla player experience level.
 - Attribute points are based on the highest vanilla level ever reached, so spending vanilla levels does not revoke earned points.
-- Five assignable attributes: Strength, Agility, Constitution, Intelligence, Spirit.
-- Agreed cumulative attribute-point formula.
+- Exactly seven assignable attributes: Strength, Health, Defense, Mining Speed, Luck, Speed, and Jump Height.
+- Agreed cumulative attribute-point formula remains unchanged.
 - Free attribute reset.
 - Server-authoritative attribute allocation and reset.
 - Per-player attachment persistence and UUID-checked client sync.
 - P-key attribute screen with English and Simplified Chinese localization.
 - Removed diagnostic counter UI/network payload and separate RPG XP progression.
-- First-pass gameplay effects for current RPG level, Agility, and Constitution.
-- Effects use stable transient attribute modifiers, recalculated on level changes, allocation, reset, login, and respawn.
+- First-pass gameplay effects for all seven attributes.
+- Jump Height modifies the upward velocity of actual player jumps.
+- Stable transient attribute modifiers are recalculated on level changes, allocation, reset, login, and respawn.
 
 Prototype tuning values (subject to playtesting):
-- Level: +0.50 max health and +0.05 armor per square-root level.
-- Agility: +0.15% movement speed per square-root attribute point.
-- Constitution: +0.50 max health and +0.08 armor per square-root attribute point.
-- Per-attribute point count is capped at 10,000 for effect calculations; square-root scaling prevents linear runaway.
-- Strength, Intelligence, and Spirit are stored/allocatable but do not yet affect gameplay.
+- Strength: +0.10 attack damage per square-root attribute point.
+- Health: +0.50 maximum health per square-root attribute point.
+- Defense: +0.20 armor per square-root attribute point.
+- Mining Speed: +0.5% block-break speed per square-root attribute point.
+- Luck: +0.05 vanilla luck per square-root attribute point.
+- Speed: +0.15% movement speed per square-root attribute point.
+- Jump Height: +0.2% upward jump velocity per square-root attribute point.
+- Each attribute's effect input is capped at 10,000 points and uses square-root scaling.
+- Current RPG level does not grant separate automatic health or armor bonuses; level progression awards attribute points according to the agreed formula.
+
+Legacy data upgrade:
+- Previously allocated Strength points are retained.
+- Allocations in the removed prototype attributes (Agility, Constitution, Intelligence, Spirit) are refunded to the available point pool.
+- Current level, highest reached level, and the earned-point formula are retained.
 
 Not implemented:
-- Final balancing of the first-pass values.
-- Gameplay roles for Strength, Intelligence, and Spirit; no skills or class system.
+- Final balancing of the seven first-pass values.
 - Exploration, quests, gathering-specific rewards, monster scaling, equipment, or loot systems.
 - Full multiplayer and compatibility testing with other attribute-modifying mods.
 
 Validation required:
 - GitHub Actions build and in-game testing for this revision.
-- Verify health, armor, movement speed, respec, level spending, login/respawn persistence, and multiplayer isolation.
+- Verify all seven attribute effects, reset, level spending, login/respawn persistence, and multiplayer isolation.
