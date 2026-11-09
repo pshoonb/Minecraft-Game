@@ -1,4 +1,4 @@
-RPG Core Prototype 0.2.0
+RPG Core Prototype 0.2.1
 
 Target:
 - Minecraft Java Edition 1.21.1
@@ -6,26 +6,24 @@ Target:
 - Java 21
 - ModDevGradle 2.0.148
 
-Implemented in source (not yet compiled/game-tested):
-- Per-player persistent RPG level, separate RPG XP progress and lifetime RPG XP
-- Five assignable attributes: Strength, Agility, Constitution, Intelligence, Spirit
-- Agreed cumulative attribute-point formula and level-range reconciliation
-- Free attribute reset
-- Server-authoritative attribute allocation and reset payloads
-- Vanilla XP orb pickup grants separate RPG XP without consuming vanilla XP
-- Configurable linear RPG XP requirement (default 100 + 25 per current RPG level)
-- One-time migration: existing vanilla player level becomes initial RPG level
-- P-key attribute screen, English and Simplified Chinese localization
-- Per-player attachment persistence and UUID-checked client sync
-- Diagnostic counter retained for persistence testing
+Implemented in source:
+- RPG level mirrors the vanilla player experience level.
+- Vanilla level changes synchronize to the RPG attribute screen.
+- Attribute points are based on the highest vanilla level reached, so spending vanilla levels does not revoke earned points.
+- Five assignable attributes: Strength, Agility, Constitution, Intelligence, Spirit.
+- Agreed cumulative attribute-point formula.
+- Free attribute reset.
+- Server-authoritative attribute allocation and reset.
+- Per-player attachment persistence and UUID-checked client sync.
+- P-key attribute screen with English and Simplified Chinese localization.
+- Removed diagnostic counter UI/network payload and separate RPG XP progression.
 
 Not implemented:
-- Attribute-to-gameplay conversion (health/attack/armor/speed etc.); exact ratios not approved
-- Exploration, quest, and independent mining rewards
-- Monster level scaling, equipment, loot, quests, exploration content
-- Final balancing and release packaging
+- Attribute-to-gameplay conversion (health/attack/armor/speed etc.); exact ratios not approved.
+- Exploration, quest, and gathering-specific rewards.
+- Monster level scaling, equipment, loot, quests, exploration content.
+- Final balancing and release packaging.
 
 Validation:
-- The cumulative formula was checked against sequential rewards for levels 0 through 10,000.
-- No successful Gradle build has yet been confirmed.
-- No client/server launch or in-game multiplayer/save-reload test has yet been confirmed.
+- Source changes are committed to the fix branch.
+- A fresh Gradle/NeoForge build and in-game test are still required for this revision.
