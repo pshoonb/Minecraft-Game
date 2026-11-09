@@ -15,7 +15,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /** Player level and attribute allocation screen. */
 public final class RpgDataScreen extends Screen {
     private static final int PANEL_WIDTH = 390;
-    private static final int PANEL_HEIGHT = 300;
+    private static final int PANEL_HEIGHT = 340;
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
 
     private final StringWidget[] valueLabels = new StringWidget[ATTRIBUTES.length];
@@ -46,7 +46,7 @@ public final class RpgDataScreen extends Screen {
 
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             final PlayerAttribute attribute = ATTRIBUTES[i];
-            int rowY = top + 120 + i * 24;
+            int rowY = top + 116 + i * 24;
             addText(left + 22, rowY + 5, 145,
                     Component.translatable("screen.rpgcore.stat." + attribute.serializedName()),
                     0xFFF0E9DC, false);
@@ -66,7 +66,7 @@ public final class RpgDataScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.translatable("screen.rpgcore.reset"),
                 button -> PacketDistributor.sendToServer(new ResetAttributesPayload()))
-                .bounds(left + 22, top + 258, 170, 20).build());
+                .bounds(left + 22, top + 308, 170, 20).build());
 
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
@@ -96,8 +96,15 @@ public final class RpgDataScreen extends Screen {
             pointsLabel.setMessage(Component.translatable("screen.rpgcore.points",
                     data.availableAttributePoints(), data.totalAttributePoints()));
 
-            long[] values = {data.strength(), data.agility(), data.constitution(),
-                    data.intelligence(), data.spirit()};
+            long[] values = {
+                    data.strength(),
+                    data.health(),
+                    data.defense(),
+                    data.miningSpeed(),
+                    data.luck(),
+                    data.speed(),
+                    data.jumpHeight()
+            };
             for (int i = 0; i < values.length; i++) {
                 valueLabels[i].setMessage(Component.literal(Long.toString(values[i])));
             }
