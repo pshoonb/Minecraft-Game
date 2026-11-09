@@ -38,10 +38,10 @@ public final class AttributeFormulaCalculator {
                 * (1.0 - Math.exp(-rawPercent / DEFENSE_SOFT_CAP_PERCENT));
     }
 
-    /** Health: sum of max(0.01, 0.5 / ln(0.1*x + e - 0.1)). */
+    /** Health: sum of max(0.01, 0.5 / ln(x + e - 1)). */
     public static double healthBonus(long points) {
         return cumulative(points, x ->
-                Math.max(0.01, 0.5 / Math.log(0.1 * x + Math.E - 0.1)));
+                Math.max(0.01, 0.5 / Math.log(x + Math.E - 1.0)));
     }
 
     /** Mining speed: cumulative percentage gain. */
