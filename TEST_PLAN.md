@@ -11,15 +11,15 @@
 - [ ] Open the player inventory and verify the RPG Attributes button appears below the inventory panel.
 - [ ] Click the button and verify the RPG panel opens.
 - [ ] Close the RPG panel and verify it returns to the inventory screen.
-- [ ] Verify the P key no longer opens the RPG panel and does not interfere with vanilla controls.
 - [ ] Opening the RPG panel requests a server snapshot.
-- [ ] The sixth attribute, Experience Loot, appears and can be allocated.
-- [ ] Each attribute row displays the allocated point count and a separate current-effect description.
-- [ ] Experience Loot displays a dynamic percentage based on its points and the same provisional per-point constant used by the server calculation.
-- [ ] Strength, Agility, Constitution, Intelligence and Spirit explicitly show that their gameplay conversions are not connected yet, rather than displaying invented bonuses.
-- [ ] The expanded panel remains readable at common GUI scales in both Simplified Chinese and English.
-- [ ] Existing player attachment data loads with Experience Loot defaulting to zero.
-- [ ] Logout/login, death/respawn and dedicated-server restart preserve the allocated attribute values.
+- [ ] Exactly eight attributes appear in this order: Strength, Defense, Health, Mining Speed, Movement Speed, Jump Height, Luck, Experience Loot.
+- [ ] Legacy placeholder attributes Agility, Constitution, Intelligence and Spirit no longer appear.
+- [ ] All eight attributes can be allocated and reset.
+- [ ] Each attribute row displays the allocated point count and an effect description.
+- [ ] Experience Loot displays a dynamic percentage using the same provisional per-point constant as the server calculation.
+- [ ] The seven other attributes describe their intended gameplay effect and explicitly state that numeric conversion is not implemented yet.
+- [ ] The expanded panel remains readable at common GUI scales in Simplified Chinese and English.
+- [ ] Attribute attachment data persists through logout/login, death/respawn and server restart.
 
 ## Combat participation and offline eligibility
 - [ ] Only server-side, successfully applied player damage adds a participant.
@@ -57,12 +57,11 @@
 - [ ] Mining, smelting, and other non-LivingExperienceDropEvent XP sources remain unchanged.
 - [ ] Entity tracking data is cleared when the living entity leaves its level.
 
-## Follow-up gameplay tests (not implemented in this prototype)
-- [ ] Health maximum/current-health behavior.
-- [ ] Defense damage paths and other-mod ordering.
-- [ ] Attack damage, critical hits, enchantments and cooldown.
-- [ ] Speed in land/water, sneak/sprint, flight and vehicles.
-- [ ] Jump height plus Jump Boost.
-- [ ] Luck kill attribution and duplicate-drop prevention.
-- [ ] Mining speed across tools, block hardness and server correction.
-- [ ] RPG menu and HUD at several GUI scales/resolutions.
+## Follow-up gameplay tests
+- [ ] Strength affects attack damage along approved balance rules.
+- [ ] Defense reduces incoming damage along approved balance rules.
+- [ ] Health changes max health and handles current health correctly.
+- [ ] Mining Speed affects block breaking without client/server desynchronization.
+- [ ] Movement Speed works on land and in water, while sneaking, sprinting, flying and riding.
+- [ ] Jump Height works with the vanilla Jump Boost effect.
+- [ ] Luck affects the approved loot/drop paths without duplicate rewards.

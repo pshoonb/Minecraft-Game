@@ -15,10 +15,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.math.BigInteger;
 
-/** Player level, allocated points, and currently active attribute effects. */
+/** Player level, allocated points, and the intended/current effect of each attribute. */
 public final class RpgDataScreen extends Screen {
-    private static final int PANEL_WIDTH = 500;
-    private static final int PANEL_HEIGHT = 386;
+    private static final int PANEL_WIDTH = 520;
+    private static final int PANEL_HEIGHT = 448;
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
 
     private final Screen parentScreen;
@@ -28,9 +28,7 @@ public final class RpgDataScreen extends Screen {
     private StringWidget pointsLabel;
     private StringWidget waitingLabel;
 
-    public RpgDataScreen() {
-        this(null);
-    }
+    public RpgDataScreen() { this(null); }
 
     public RpgDataScreen(Screen parentScreen) {
         super(Component.translatable("screen.rpgcore.title"));
@@ -49,39 +47,39 @@ public final class RpgDataScreen extends Screen {
 
         levelLabel = addText(left + 22, top + 55, 340,
                 Component.translatable("screen.rpgcore.level", "..."), 0xFFF0E9DC, false);
-        pointsLabel = addText(left + 22, top + 75, 440,
+        pointsLabel = addText(left + 22, top + 75, 470,
                 Component.translatable("screen.rpgcore.points", "...", "..."), 0xFFFFD778, false);
-        waitingLabel = addText(left + 22, top + 96, 440,
+        waitingLabel = addText(left + 22, top + 96, 470,
                 Component.translatable("screen.rpgcore.waiting"), 0xFFFFD778, false);
 
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             final PlayerAttribute attribute = ATTRIBUTES[i];
-            int rowY = top + 116 + i * 36;
+            int rowY = top + 112 + i * 36;
 
-            addText(left + 22, rowY + 3, 120,
+            addText(left + 22, rowY + 3, 126,
                     Component.translatable("screen.rpgcore.stat." + attribute.serializedName()),
                     0xFFF0E9DC, false);
-            valueLabels[i] = addText(left + 148, rowY + 3, 105,
+            valueLabels[i] = addText(left + 154, rowY + 3, 108,
                     Component.translatable("screen.rpgcore.stat.points", "0"),
                     0xFFFFD778, false);
-            effectLabels[i] = addText(left + 22, rowY + 18, 365,
-                    Component.translatable("screen.rpgcore.effect.pending"),
+            effectLabels[i] = addText(left + 22, rowY + 18, 370,
+                    Component.translatable("screen.rpgcore.effect." + attribute.serializedName()),
                     0xFFB8B0A2, false);
 
             addRenderableWidget(Button.builder(Component.literal("+1"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 1)))
-                    .bounds(left + 400, rowY + 7, 38, 20).build());
+                    .bounds(left + 414, rowY + 7, 38, 20).build());
 
             addRenderableWidget(Button.builder(Component.literal("+10"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 10)))
-                    .bounds(left + 442, rowY + 7, 44, 20).build());
+                    .bounds(left + 456, rowY + 7, 44, 20).build());
         }
 
         addRenderableWidget(Button.builder(Component.translatable("screen.rpgcore.reset"),
                 button -> PacketDistributor.sendToServer(new ResetAttributesPayload()))
-                .bounds(left + 22, top + 350, 170, 20).build());
+                .bounds(left + 22, top + 414, 170, 20).build());
 
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
@@ -103,15 +101,11 @@ public final class RpgDataScreen extends Screen {
                     "screen.rpgcore.stat.points", Long.toString(data.valueOf(attribute))));
 
             if (attribute == PlayerAttribute.EXPERIENCE_LOOT) {
-                // Use the same balance constant as the server-side XP calculation.
                 effectLabels[i].setMessage(Component.translatable(
-                        "screen.rpgcore.effect.experience_loot",
-                        experienceLootBonus.toString()));
+                        "screen.rpgcore.effect.experience_loot", experienceLootBonus.toString()));
             } else {
-                // These five gameplay conversions do not exist yet; do not
-                // display speculative values as if they were active bonuses.
-                effectLabels[i].setMessage(
-                        Component.translatable("screen.rpgcore.effect.pending"));
+                effectLabels[i].setMessage(Component.translatable(
+                        "screen.rpgcore.effect." + attribute.serializedName()));
             }
         }
     }
@@ -140,13 +134,9 @@ public final class RpgDataScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (minecraft != null) {
-            minecraft.setScreen(parentScreen);
-        }
+        if (minecraft != null) minecraft.setScreen(parentScreen);
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
+    public boolean isPauseScreen() { return false; }
 }

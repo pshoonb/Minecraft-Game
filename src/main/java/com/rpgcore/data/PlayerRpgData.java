@@ -11,24 +11,28 @@ public record PlayerRpgData(
         int rpgLevel,
         int highestLevelReached,
         long strength,
-        long agility,
-        long constitution,
-        long intelligence,
-        long spirit,
+        long defense,
+        long health,
+        long miningSpeed,
+        long speed,
+        long jumpHeight,
+        long luck,
         long experienceLoot,
         boolean progressionInitialized
 ) {
     public static final PlayerRpgData EMPTY =
-            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, 0L, false);
+            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, false);
 
     public static final Codec<PlayerRpgData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.optionalFieldOf("rpg_level", 0).forGetter(PlayerRpgData::rpgLevel),
             Codec.INT.optionalFieldOf("highest_level_reached", 0).forGetter(PlayerRpgData::highestLevelReached),
             Codec.LONG.optionalFieldOf("strength", 0L).forGetter(PlayerRpgData::strength),
-            Codec.LONG.optionalFieldOf("agility", 0L).forGetter(PlayerRpgData::agility),
-            Codec.LONG.optionalFieldOf("constitution", 0L).forGetter(PlayerRpgData::constitution),
-            Codec.LONG.optionalFieldOf("intelligence", 0L).forGetter(PlayerRpgData::intelligence),
-            Codec.LONG.optionalFieldOf("spirit", 0L).forGetter(PlayerRpgData::spirit),
+            Codec.LONG.optionalFieldOf("defense", 0L).forGetter(PlayerRpgData::defense),
+            Codec.LONG.optionalFieldOf("health", 0L).forGetter(PlayerRpgData::health),
+            Codec.LONG.optionalFieldOf("mining_speed", 0L).forGetter(PlayerRpgData::miningSpeed),
+            Codec.LONG.optionalFieldOf("speed", 0L).forGetter(PlayerRpgData::speed),
+            Codec.LONG.optionalFieldOf("jump_height", 0L).forGetter(PlayerRpgData::jumpHeight),
+            Codec.LONG.optionalFieldOf("luck", 0L).forGetter(PlayerRpgData::luck),
             Codec.LONG.optionalFieldOf("experience_loot", 0L).forGetter(PlayerRpgData::experienceLoot),
             Codec.BOOL.optionalFieldOf("progression_initialized", false).forGetter(PlayerRpgData::progressionInitialized)
     ).apply(instance, PlayerRpgData::new));
@@ -41,10 +45,12 @@ public record PlayerRpgData(
         rpgLevel = clampLevel(rpgLevel);
         highestLevelReached = Math.max(clampLevel(highestLevelReached), rpgLevel);
         strength = nonNegative(strength);
-        agility = nonNegative(agility);
-        constitution = nonNegative(constitution);
-        intelligence = nonNegative(intelligence);
-        spirit = nonNegative(spirit);
+        defense = nonNegative(defense);
+        health = nonNegative(health);
+        miningSpeed = nonNegative(miningSpeed);
+        speed = nonNegative(speed);
+        jumpHeight = nonNegative(jumpHeight);
+        luck = nonNegative(luck);
         experienceLoot = nonNegative(experienceLoot);
     }
 
@@ -54,30 +60,31 @@ public record PlayerRpgData(
 
     public PlayerRpgData initializeProgression(int vanillaLevel) {
         int safeLevel = clampLevel(vanillaLevel);
-        // Preserve previously allocated attributes and their earned-point baseline
-        // when upgrading from the earlier prototype.
         int previousBaseline = Math.max(rpgLevel, highestLevelReached);
         return new PlayerRpgData(safeLevel, Math.max(previousBaseline, safeLevel),
-                strength, agility, constitution, intelligence, spirit, experienceLoot, true);
+                strength, defense, health, miningSpeed, speed, jumpHeight, luck,
+                experienceLoot, true);
     }
 
     public PlayerRpgData withVanillaLevel(int vanillaLevel) {
         int safeLevel = clampLevel(vanillaLevel);
         return new PlayerRpgData(safeLevel, Math.max(highestLevelReached, safeLevel),
-                strength, agility, constitution, intelligence, spirit, experienceLoot, true);
+                strength, defense, health, miningSpeed, speed, jumpHeight, luck,
+                experienceLoot, true);
     }
 
     public long allocatedAttributePoints() {
         long total = 0L;
         total = saturatedAdd(total, strength);
-        total = saturatedAdd(total, agility);
-        total = saturatedAdd(total, constitution);
-        total = saturatedAdd(total, intelligence);
-        total = saturatedAdd(total, spirit);
+        total = saturatedAdd(total, defense);
+        total = saturatedAdd(total, health);
+        total = saturatedAdd(total, miningSpeed);
+        total = saturatedAdd(total, speed);
+        total = saturatedAdd(total, jumpHeight);
+        total = saturatedAdd(total, luck);
         return saturatedAdd(total, experienceLoot);
     }
 
-    /** Attribute rewards are based on the highest vanilla level ever reached. */
     public long totalAttributePoints() {
         return RpgProgression.totalAttributePointsAtLevel(highestLevelReached);
     }
@@ -89,33 +96,39 @@ public record PlayerRpgData(
     public long valueOf(PlayerAttribute attribute) {
         return switch (attribute) {
             case STRENGTH -> strength;
-            case AGILITY -> agility;
-            case CONSTITUTION -> constitution;
-            case INTELLIGENCE -> intelligence;
-            case SPIRIT -> spirit;
+            case DEFENSE -> defense;
+            case HEALTH -> health;
+            case MINING_SPEED -> miningSpeed;
+            case SPEED -> speed;
+            case JUMP_HEIGHT -> jumpHeight;
+            case LUCK -> luck;
             case EXPERIENCE_LOOT -> experienceLoot;
         };
     }
 
     public PlayerRpgData addAttribute(PlayerAttribute attribute, long amount) {
-        if (amount <= 0L) return this;
+        if (attribute == null || amount <= 0L) return this;
         long next = saturatedAdd(valueOf(attribute), amount);
         return switch (attribute) {
-            case STRENGTH -> withAttributes(next, agility, constitution, intelligence, spirit, experienceLoot);
-            case AGILITY -> withAttributes(strength, next, constitution, intelligence, spirit, experienceLoot);
-            case CONSTITUTION -> withAttributes(strength, agility, next, intelligence, spirit, experienceLoot);
-            case INTELLIGENCE -> withAttributes(strength, agility, constitution, next, spirit, experienceLoot);
-            case SPIRIT -> withAttributes(strength, agility, constitution, intelligence, next, experienceLoot);
-            case EXPERIENCE_LOOT -> withAttributes(strength, agility, constitution, intelligence, spirit, next);
+            case STRENGTH -> withAttributes(next, defense, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
+            case DEFENSE -> withAttributes(strength, next, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
+            case HEALTH -> withAttributes(strength, defense, next, miningSpeed, speed, jumpHeight, luck, experienceLoot);
+            case MINING_SPEED -> withAttributes(strength, defense, health, next, speed, jumpHeight, luck, experienceLoot);
+            case SPEED -> withAttributes(strength, defense, health, miningSpeed, next, jumpHeight, luck, experienceLoot);
+            case JUMP_HEIGHT -> withAttributes(strength, defense, health, miningSpeed, speed, next, luck, experienceLoot);
+            case LUCK -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, next, experienceLoot);
+            case EXPERIENCE_LOOT -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, next);
         };
     }
 
     public PlayerRpgData resetAttributes() {
-        return withAttributes(0L, 0L, 0L, 0L, 0L, 0L);
+        return withAttributes(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
     }
 
-    private PlayerRpgData withAttributes(long s, long a, long c, long i, long sp, long expLoot) {
-        return new PlayerRpgData(rpgLevel, highestLevelReached, s, a, c, i, sp, expLoot, progressionInitialized);
+    private PlayerRpgData withAttributes(
+            long s, long d, long h, long m, long sp, long j, long l, long expLoot) {
+        return new PlayerRpgData(rpgLevel, highestLevelReached,
+                s, d, h, m, sp, j, l, expLoot, progressionInitialized);
     }
 
     private static long nonNegative(long value) { return Math.max(0L, value); }
@@ -128,16 +141,20 @@ public record PlayerRpgData(
         b.writeInt(d.rpgLevel);
         b.writeInt(d.highestLevelReached);
         b.writeLong(d.strength);
-        b.writeLong(d.agility);
-        b.writeLong(d.constitution);
-        b.writeLong(d.intelligence);
-        b.writeLong(d.spirit);
+        b.writeLong(d.defense);
+        b.writeLong(d.health);
+        b.writeLong(d.miningSpeed);
+        b.writeLong(d.speed);
+        b.writeLong(d.jumpHeight);
+        b.writeLong(d.luck);
         b.writeLong(d.experienceLoot);
         b.writeBoolean(d.progressionInitialized);
     }
 
     private static PlayerRpgData readFromBuffer(ByteBuf b) {
-        return new PlayerRpgData(b.readInt(), b.readInt(), b.readLong(), b.readLong(),
-                b.readLong(), b.readLong(), b.readLong(), b.readLong(), b.readBoolean());
+        return new PlayerRpgData(b.readInt(), b.readInt(),
+                b.readLong(), b.readLong(), b.readLong(), b.readLong(),
+                b.readLong(), b.readLong(), b.readLong(), b.readLong(),
+                b.readBoolean());
     }
 }

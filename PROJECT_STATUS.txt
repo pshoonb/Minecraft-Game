@@ -1,4 +1,4 @@
-RPG Core Prototype 0.2.6
+RPG Core Prototype 0.2.7
 
 Target:
 - Minecraft Java Edition 1.21.1
@@ -9,30 +9,27 @@ Target:
 Implemented in source:
 - RPG level mirrors the vanilla player experience level.
 - Vanilla level changes synchronize to the RPG attribute screen.
-- Attribute points are based on the highest vanilla level reached, so spending vanilla levels does not revoke earned points.
-- Six assignable attributes: Strength, Agility, Constitution, Intelligence, Spirit, Experience Loot.
-- Agreed cumulative attribute-point formula.
+- Attribute points are based on the highest vanilla level reached.
+- Eight assignable attributes: Strength, Defense, Health, Mining Speed, Movement Speed, Jump Height, Luck, Experience Loot.
 - Free attribute reset.
 - Server-authoritative attribute allocation and reset.
 - Per-player attachment persistence and UUID-checked client sync.
-- Inventory-screen button opens the attribute panel; the conflicting P-key binding has been removed.
-- Attribute panel supports English and Simplified Chinese localization.
-- Attribute rows show allocated points separately from current effect descriptions.
-- Experience Loot effect text is dynamically calculated from the shared provisional server balance constant.
-- The five other attributes explicitly display that gameplay conversion is not connected yet; no unapproved values are presented.
+- Attribute screen displays the eight intended attributes and their allocated points.
+- Intended effects are documented in the UI; seven gameplay conversions are marked as not implemented until balance rules are set.
+- Experience Loot effect text is calculated from the same provisional balance constant as the server XP calculation.
 - Experience Loot participation tracking refreshes on successful player damage and expires after 60 seconds.
-- A participant's latest Experience Loot value is refreshed on every hit and captured again on logout.
-- Offline participants remain eligible for 60 seconds after their last successful hit; online participants are read live at the entity's death, while offline participants use their latest logout snapshot.
-- Each LivingExperienceDropEvent batch is replaced by custom XP orbs using the agreed per-orb denomination calculation.
-- Nearby pre-existing XP orbs are never searched or rewritten; same-denomination vanilla merging only stacks orb count.
-- Multi-batch entity XP drops, including Ender Dragon waves, are processed batch by batch.
+- Offline participants remain eligible for 60 seconds after their last successful hit and use their most recent logout snapshot.
+- Each LivingExperienceDropEvent batch uses the agreed per-orb denomination calculation.
+- Nearby pre-existing XP orbs are not searched or rewritten; multi-batch XP drops are processed separately.
 
 Not implemented:
-- Gameplay conversion formulas and actual Minecraft effects for Strength, Agility, Constitution, Intelligence and Spirit; their point counts are shown, but their active effects are not implemented.
-- Exploration, quest, and gathering-specific rewards.
-- Monster level scaling, equipment, loot, quests, exploration content.
-- Final balancing and release packaging.
+- Numeric Minecraft gameplay conversion for Strength, Defense, Health, Mining Speed, Movement Speed, Jump Height and Luck; their point allocation and intended effects are present, but the actual rates/effects are not connected.
+- Final balancing of Experience Loot's provisional +2% per point.
+- Exploration, quest, gathering, monster scaling, equipment and loot systems.
+
+Data note:
+- The project does not yet have players using these attributes. The previous placeholder fields Agility, Constitution, Intelligence and Spirit have been replaced by the eight intended fields without a player-data migration.
 
 Validation:
 - Source and documentation changes are committed to main.
-- A fresh Gradle/NeoForge build and in-game test are still required for this revision.
+- A fresh Gradle/NeoForge build and in-game test are required for this revision.
