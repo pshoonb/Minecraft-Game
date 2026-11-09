@@ -27,6 +27,18 @@
 - [ ] A client cannot choose a target UUID in the increment request.
 - [ ] Only the connected player receives their own sync snapshot.
 
+## Experience loot
+- [ ] The sixth attribute, Experience Loot, appears in the attribute screen and can be allocated.
+- [ ] Existing player attachment data loads with Experience Loot defaulting to zero.
+- [ ] Only server-side, successfully applied player damage adds a participant.
+- [ ] Direct player attacks and player-owned projectiles are both attributed to the player.
+- [ ] Repeated damage by one player refreshes their 60-second participation timer without duplicating their entry.
+- [ ] A participant is excluded once 1,200 game ticks have elapsed since their last successful hit.
+- [ ] Multiplayer kills use the highest Experience Loot value among active online participants, not only the final attacker.
+- [ ] The bonus is applied to the entity's existing XP drop once, with fractional results rounded down.
+- [ ] Entities with zero original XP do not create XP through Experience Loot.
+- [ ] Participation records are removed after XP-drop handling and expire during server ticking.
+
 ## Follow-up gameplay tests (not implemented in this prototype)
 - [ ] Health maximum/current-health behavior.
 - [ ] Defense damage paths and other-mod ordering.
