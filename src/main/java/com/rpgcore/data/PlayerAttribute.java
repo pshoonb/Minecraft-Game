@@ -1,18 +1,14 @@
 package com.rpgcore.data;
 
-/**
- * The five freely assignable character attributes.
- *
- * <p>Agility and Constitution currently affect vanilla player attributes.
- * The other values remain saved and allocatable until their gameplay roles
- * have been finalized.</p>
- */
+/** The seven freely assignable RPG attributes. */
 public enum PlayerAttribute {
     STRENGTH(0, "strength"),
-    AGILITY(1, "agility"),
-    CONSTITUTION(2, "constitution"),
-    INTELLIGENCE(3, "intelligence"),
-    SPIRIT(4, "spirit");
+    HEALTH(1, "health"),
+    DEFENSE(2, "defense"),
+    MINING_SPEED(3, "mining_speed"),
+    LUCK(4, "luck"),
+    SPEED(5, "speed"),
+    JUMP_HEIGHT(6, "jump_height");
 
     private final int networkId;
     private final String serializedName;
