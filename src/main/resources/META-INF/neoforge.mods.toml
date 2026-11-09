@@ -7,7 +7,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="RPG Core Project"
-description='''A small development prototype for validating per-player RPG data persistence and server-authoritative synchronization.'''
+description='''An RPG progression prototype with separate player levels, experience, and freely assignable attributes.'''
 
 [[dependencies.${mod_id}]]
 modId="neoforge"
