@@ -394,30 +394,20 @@ def check_installer_update():
         if file_hash(temporary_path) != remote_hash:
             raise RuntimeError("The downloaded installer failed its integrity check.")
 
-        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        backup_path = installer_path.with_name(
-            installer_path.name + ".backup-" + timestamp
-        )
-
-        counter = 1
-        while backup_path.exists():
-            backup_path = installer_path.with_name(
-                installer_path.name
-                + ".backup-"
-                + timestamp
-                + "-"
-                + str(counter)
-            )
-            counter += 1
-
-        shutil.copy2(installer_path, backup_path)
         os.replace(temporary_path, installer_path)
 
+        # Replace the old installer directly; do not create versioned backups.
+        for old_backup in installer_path.parent.glob(installer_path.name + ".backup-*"):
+            try:
+                old_backup.unlink()
+                print("Removed an old installer backup: ", old_backup.name, flush=True)
+            except OSError as exc:
+                print("Could not remove an old installer backup: ", exc, flush=True)
+
         show_info(
-            "The installer has been updated successfully!\n\n"
-            "Backup of the previous version:\n"
-            + str(backup_path)
-            + "\n\nClick “OK” to restart the updated installer."
+            "The installer has been updated successfully!\\n\\n"
+            "The previous installer file was replaced without creating a backup.\\n\\n"
+            "Click “OK” to restart the updated installer."
         )
 
         try:
@@ -1151,7 +1141,8 @@ def install_mod(mod_file, state):
             flush=True
         )
     else:
-        # 先写入临时文件并校验，再替换目标，尽量避免复制中断留下半个 JAR。
+        # Copy and verify first, then atomically replace the old JAR in place.
+        # No versioned backup is created.
         temporary = destination.with_name(destination.name + ".installing")
 
         try:
@@ -1161,31 +1152,25 @@ def install_mod(mod_file, state):
             if file_hash(temporary) != source_hash or not valid_jar(temporary):
                 raise RuntimeError("The mod failed verification after being copied to the game folder.")
 
-            if destination.exists():
-                timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-                backup = destination.with_name(
-                    destination.name + ".backup-" + timestamp
-                )
-
-                counter = 1
-                while backup.exists():
-                    backup = destination.with_name(
-                        destination.name
-                        + ".backup-"
-                        + timestamp
-                        + "-"
-                        + str(counter)
-                    )
-                    counter += 1
-
-                destination.replace(backup)
-                print("The previous mod file has been backed up.", flush=True)
-
             os.replace(temporary, destination)
-            print("RPG Core installed successfully.", flush=True)
+            print("RPG Core installed successfully; the previous JAR was replaced.", flush=True)
 
         finally:
             temporary.unlink(missing_ok=True)
+
+    # Remove only backup files that match the naming pattern previously created
+    # by this installer (for example: rpgcore-0.2.7.jar.backup-20261110-031500).
+    legacy_backup_pattern = re.compile(
+        r"^rpgcore-.+\\.jar\\.backup-\\d{8}-\\d{6}(?:-\\d+)?$",
+        re.IGNORECASE
+    )
+    for old_backup in mods_dir.iterdir():
+        if old_backup.is_file() and legacy_backup_pattern.fullmatch(old_backup.name):
+            try:
+                old_backup.unlink()
+                print("Removed an old RPG Core backup: ", old_backup.name, flush=True)
+            except OSError as exc:
+                print("Could not remove an old RPG Core backup: ", exc, flush=True)
 
     state["managed_mod"] = {
         "filename": mod_file.name,
