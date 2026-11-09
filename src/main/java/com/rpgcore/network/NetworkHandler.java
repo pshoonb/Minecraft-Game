@@ -17,8 +17,6 @@ public final class NetworkHandler {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(RequestRpgDataPayload.TYPE, RequestRpgDataPayload.STREAM_CODEC,
                 NetworkHandler::handleRequest);
-        registrar.playToServer(IncrementDiagnosticPayload.TYPE, IncrementDiagnosticPayload.STREAM_CODEC,
-                NetworkHandler::handleIncrement);
         registrar.playToServer(AllocateAttributePayload.TYPE, AllocateAttributePayload.STREAM_CODEC,
                 NetworkHandler::handleAllocate);
         registrar.playToServer(ResetAttributesPayload.TYPE, ResetAttributesPayload.STREAM_CODEC,
@@ -27,19 +25,9 @@ public final class NetworkHandler {
 
     private static void handleRequest(RequestRpgDataPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
-            RpgProgressionService.initializeIfNeeded(player);
+            RpgProgressionService.syncVanillaLevel(player);
             sendSnapshot(player);
         }
-    }
-
-    private static void handleIncrement(IncrementDiagnosticPayload payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) return;
-        RpgProgressionService.initializeIfNeeded(player);
-        PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        int next = current.diagnosticCounter() >= 1_000_000
-                ? 1_000_000 : current.diagnosticCounter() + 1;
-        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), current.withDiagnosticCounter(next));
-        sendSnapshot(player);
     }
 
     private static void handleAllocate(AllocateAttributePayload payload, IPayloadContext context) {
