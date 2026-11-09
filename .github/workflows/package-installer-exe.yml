@@ -1,0 +1,94 @@
+name: Package RPG Core Installer EXE
+
+on:
+  workflow_run:
+    workflows: ["Build RPG Core Prototype"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  package-windows-exe:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_COMMIT: ${{ github.event.workflow_run.head_sha }}
+      SOURCE_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+
+    steps:
+      - name: Check out the exact successful mod build commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install PyInstaller
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade pyinstaller
+          python --version
+          python -m PyInstaller --version
+
+      - name: Download the official NeoForge installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = 'neoforge-21.1.265-installer.jar'
+          $url = 'https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.265/neoforge-21.1.265-installer.jar'
+          Invoke-WebRequest -Uri $url -OutFile $installer
+          if (-not (Test-Path $installer) -or (Get-Item $installer).Length -lt 100000) {
+            throw 'The NeoForge installer download is missing or unexpectedly small.'
+          }
+
+      - name: Validate Python source
+        shell: pwsh
+        run: |
+          python -m py_compile 'RPG_Core_一键安装_自动更新版.py'
+
+      - name: Build one-file GUI executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = 'neoforge-21.1.265-installer.jar'
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name 'RPG-Core-Installer' --add-data "$installer;." --distpath 'dist' --workpath 'build/pyinstaller' --specpath 'build/pyinstaller' 'RPG_Core_一键安装_自动更新版.py'
+          $exe = 'dist/RPG-Core-Installer.exe'
+          if (-not (Test-Path $exe) -or (Get-Item $exe).Length -lt 1000000) {
+            throw 'The packaged EXE was not created or is unexpectedly small.'
+          }
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  RPG-Core-Installer.exe" | Set-Content -Encoding ascii 'dist/RPG-Core-Installer.exe.sha256'
+
+      - name: Upload Windows EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RPG-Core-Installer-Windows
+          path: |
+            dist/RPG-Core-Installer.exe
+            dist/RPG-Core-Installer.exe.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach EXE to the matching GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $versionLine = Select-String -Path 'gradle.properties' -Pattern '^mod_version=' | Select-Object -First 1
+          if (-not $versionLine) {
+            throw 'mod_version was not found in gradle.properties.'
+          }
+          $version = ($versionLine.Line -split '=', 2)[1].Trim()
+          $tag = "v$version-build.$env:SOURCE_RUN_NUMBER"
+          gh release view $tag --json tagName
+          gh release upload $tag 'dist/RPG-Core-Installer.exe' 'dist/RPG-Core-Installer.exe.sha256' --clobber
+          Write-Host "Uploaded Windows installer to release $tag for commit $env:SOURCE_COMMIT"

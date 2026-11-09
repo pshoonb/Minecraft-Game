@@ -43,7 +43,30 @@ JAVA_API = (
 )
 
 APP_NAME = "RPG Core Installer"
-BASE_DIR = Path(__file__).resolve().parent
+IS_FROZEN = bool(getattr(sys, "frozen", False))
+BASE_DIR = (
+    Path(sys.executable).resolve().parent
+    if IS_FROZEN
+    else Path(__file__).resolve().parent
+)
+
+# Keep diagnostic output available when the Windows EXE is built without a console.
+_FROZEN_LOG_HANDLE = None
+if IS_FROZEN and (sys.stdout is None or sys.stderr is None):
+    try:
+        _log_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "RPGCoreInstaller"
+        _log_dir.mkdir(parents=True, exist_ok=True)
+        _FROZEN_LOG_HANDLE = open(_log_dir / "installer.log", "a", encoding="utf-8")
+        if sys.stdout is None:
+            sys.stdout = _FROZEN_LOG_HANDLE
+        if sys.stderr is None:
+            sys.stderr = _FROZEN_LOG_HANDLE
+    except OSError:
+        _FROZEN_LOG_HANDLE = open(os.devnull, "w", encoding="utf-8")
+        if sys.stdout is None:
+            sys.stdout = _FROZEN_LOG_HANDLE
+        if sys.stderr is None:
+            sys.stderr = _FROZEN_LOG_HANDLE
 
 APPDATA = Path(
     os.environ.get(
@@ -318,6 +341,12 @@ def check_installer_update():
     Let the user sync the update or continue with the current version.
     Back up the previous file and restart the updated installer after a successful update.
     """
+    # The packaged EXE is updated by publishing a new Windows release asset.
+    # Never replace an executable with the raw Python source file.
+    if IS_FROZEN:
+        print("The packaged installer is updated through new EXE releases.", flush=True)
+        return False
+
     installer_path = Path(__file__).resolve()
     temporary_path = installer_path.with_name(
         installer_path.name + ".update-download"
@@ -448,7 +477,16 @@ def valid_jar(path):
 # =====================================================
 
 def find_files():
-    installer = BASE_DIR / INSTALLER_NAME
+    installer_candidates = [BASE_DIR / INSTALLER_NAME]
+    if IS_FROZEN:
+        # In a one-file PyInstaller build, bundled data is extracted to _MEIPASS.
+        bundle_dir = Path(getattr(sys, "_MEIPASS", BASE_DIR))
+        installer_candidates.insert(0, bundle_dir / INSTALLER_NAME)
+
+    installer = next(
+        (candidate for candidate in installer_candidates if candidate.is_file()),
+        BASE_DIR / INSTALLER_NAME
+    )
 
     if not installer.is_file():
         raise FileNotFoundError(

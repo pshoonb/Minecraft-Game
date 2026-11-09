@@ -28,7 +28,7 @@ RPG Core 保留原版生存、建造、挖矿、合成与经验系统；当前�
 - 末影龙等分批发放经验的实体会逐批处理，保留原版逐批掉落时机；每一批都使用该实体死亡时记录的属性快照。
 - 为保证世界保存/重新载入后面额仍为正数，单颗经验球的自定义面额上限为 32767。达到上限时会截断单球面额。
 - 玩家数据由服务器验证、按玩家独立保存，并同步给对应玩家。
-- 打开玩家背包（Inventory）后，点击背包下方的「RPG 属性面板」按钮打开属性界面；支持简体中文和英文。
+- 打开玩家背包（Inventory）后，点击背包下方的「RPG 属性面板」按钮打开全屏属性界面；支持简体中文和英文。每项属性提供 +1、+10、+50、+100 四种分配数量，+50 位于 +1 下方，+100 位于 +10 下方。
 
 ## 当前尚未完成
 
@@ -45,7 +45,7 @@ RPG Core 保留原版生存、建造、挖矿、合成与经验系统；当前�
 - ModDevGradle 2.0.148
 - Gradle 9.x
 
-在项目根目录运行 BUILD_WINDOWS.bat，成功后 JAR 位于 build/libs/。建议先在独立测试实例和临时世界中验证。
+在项目根目录运行 BUILD_WINDOWS.bat，成功后 Mod JAR 位于 build/libs/。Windows 安装器源码为 RPG_Core_一键安装_自动更新版.py；运行 BUILD_INSTALLER_EXE.bat 可使用 PyInstaller 打包为 dist/RPG-Core-Installer.exe。主分支 Mod 构建成功后，GitHub Actions 也会自动在 Windows runner 上打包 EXE，并把 EXE 与 SHA-256 校验文件附加到对应 Release。建议先在独立测试实例和临时世界中验证。
 
 ## 建议测试
 

@@ -96,39 +96,53 @@ public final class RpgDataScreen extends Screen {
             cardWidths[i] = columnWidth;
             cardHeights[i] = rowHeight;
 
-            boolean tightRow = rowHeight < 26;
-            int innerTop = cellY + (tightRow ? 0 : (rowHeight - 26) / 2);
-            int buttonWidth = Math.max(20, Math.min(26, (columnWidth - 18) / 7));
-            int plusOneWidth = Math.max(18, buttonWidth - 2);
+            int buttonWidth = Math.max(22, Math.min(30, (columnWidth - 20) / 7));
             int buttonGap = 3;
-            int plusTenX = cellX + columnWidth - 7 - buttonWidth;
-            int plusOneX = plusTenX - buttonGap - plusOneWidth;
-            int valueWidth = Math.min(42, Math.max(28, columnWidth / 5));
-            int valueX = plusOneX - 4 - valueWidth;
-            int nameWidth = Math.max(40, valueX - (cellX + 7) - 3);
-            int firstLineY = innerTop + (tightRow ? 0 : 2);
-            int effectY = innerTop + (tightRow ? 10 : 14);
-            int buttonHeight = tightRow ? Math.max(12, rowHeight - 2) : 14;
+            int buttonGroupWidth = buttonWidth * 2 + buttonGap;
+            int buttonLeft = cellX + columnWidth - 7 - buttonGroupWidth;
+            int buttonHeight = Math.max(10, Math.min(14, (rowHeight - 5) / 2));
+            int buttonTop = cellY + (rowHeight - (buttonHeight * 2 + 2)) / 2;
 
-            addText(cellX + 7, firstLineY, nameWidth,
+            int textLeft = cellX + 7;
+            int textWidth = Math.max(64, buttonLeft - textLeft - 8);
+            int valueWidth = Math.min(48, Math.max(34, textWidth / 4));
+            int nameWidth = Math.max(34, textWidth - valueWidth - 5);
+            int firstLineY = cellY + rowHeight / 2 - 8;
+            int effectY = firstLineY + 13;
+
+            addText(textLeft, firstLineY, nameWidth,
                     Component.translatable("screen.rpgcore.stat." + attribute.serializedName()),
                     0xFFF0E9DC, false);
-            valueLabels[i] = addText(valueX, firstLineY, valueWidth,
+            valueLabels[i] = addText(textLeft + nameWidth + 5, firstLineY, valueWidth,
                     Component.translatable("screen.rpgcore.stat.points", "0"),
                     0xFFFFD778, false);
-            effectLabels[i] = addText(cellX + 7, effectY, columnWidth - 14,
+            effectLabels[i] = addText(textLeft, effectY, textWidth,
                     Component.translatable("screen.rpgcore.effect." + attribute.serializedName()),
                     0xFFB8B0A2, false);
+
+            int leftButtonX = buttonLeft;
+            int rightButtonX = buttonLeft + buttonWidth + buttonGap;
+            int lowerButtonY = buttonTop + buttonHeight + 2;
 
             addRenderableWidget(Button.builder(Component.literal("+1"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 1)))
-                    .bounds(plusOneX, innerTop, plusOneWidth, buttonHeight).build());
+                    .bounds(leftButtonX, buttonTop, buttonWidth, buttonHeight).build());
 
             addRenderableWidget(Button.builder(Component.literal("+10"),
                     button -> PacketDistributor.sendToServer(
                             new AllocateAttributePayload(attribute.networkId(), 10)))
-                    .bounds(plusTenX, innerTop, buttonWidth, buttonHeight).build());
+                    .bounds(rightButtonX, buttonTop, buttonWidth, buttonHeight).build());
+
+            addRenderableWidget(Button.builder(Component.literal("+50"),
+                    button -> PacketDistributor.sendToServer(
+                            new AllocateAttributePayload(attribute.networkId(), 50)))
+                    .bounds(leftButtonX, lowerButtonY, buttonWidth, buttonHeight).build());
+
+            addRenderableWidget(Button.builder(Component.literal("+100"),
+                    button -> PacketDistributor.sendToServer(
+                            new AllocateAttributePayload(attribute.networkId(), 100)))
+                    .bounds(rightButtonX, lowerButtonY, buttonWidth, buttonHeight).build());
         }
 
         int totalFooterWidth = 260;

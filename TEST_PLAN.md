@@ -20,6 +20,8 @@
 - [ ] The seven other attributes describe their intended gameplay effect and explicitly state that numeric conversion is not implemented yet.
 - [ ] The RPG Attributes screen fills the available game window instead of displaying a fixed 410x236 center panel.
 - [ ] The responsive two-column layout keeps all eight attributes, allocation controls, effect text, reset and back controls visible at common window sizes and GUI scales.
+- [ ] Each attribute has +1 and +10 in the upper button row, with +50 directly below +1 and +100 directly below +10.
+- [ ] Each allocation amount is accepted only when that many unspent attribute points are available; insufficient points do not partially allocate.
 - [ ] The layout remains readable in Simplified Chinese and English at multiple GUI scales and window aspect ratios.
 - [ ] The inventory screen button opens the full-window RPG Attributes screen.
 - [ ] The Back button and Escape return to the inventory screen that opened the RPG Attributes screen.
@@ -81,3 +83,12 @@
 - [ ] Movement Speed works on land and in water, while sneaking, sprinting, flying and riding.
 - [ ] Jump Height works with the vanilla Jump Boost effect.
 - [ ] Luck's ore, chance-predicate, weighted-pool and deterministic-entry behavior produces no unintended duplicate rewards.
+
+## Windows installer EXE packaging
+- [ ] The Windows workflow checks out the exact commit used by the successful mod build.
+- [ ] The Python installer source passes `py_compile`.
+- [ ] The single-file GUI EXE is generated as `RPG-Core-Installer.exe`.
+- [ ] The matching NeoForge 21.1.265 installer JAR is bundled into the EXE and can be found from the PyInstaller one-file extraction directory.
+- [ ] Running the EXE uses the executable's folder for optional local files and uses the bundled NeoForge installer as a fallback.
+- [ ] The frozen EXE does not attempt to replace itself with the raw Python source during the legacy Python self-update check.
+- [ ] The EXE and SHA-256 checksum are uploaded as a workflow artifact and attached to the GitHub Release created for the same source commit.
