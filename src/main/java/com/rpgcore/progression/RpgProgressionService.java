@@ -1,5 +1,6 @@
 package com.rpgcore.progression;
 
+import com.rpgcore.attributes.PlayerAttributeEffects;
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerAttribute;
 import com.rpgcore.data.PlayerRpgData;
@@ -36,14 +37,17 @@ public final class RpgProgressionService {
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
         if (current.availableAttributePoints() < amount) return;
 
-        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), current.addAttribute(attribute, amount));
+        PlayerRpgData updated = current.addAttribute(attribute, amount);
+        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
+        PlayerAttributeEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
     }
 
     public static void resetAttributes(ServerPlayer player) {
         syncVanillaLevel(player);
-        PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), current.resetAttributes());
+        PlayerRpgData updated = player.getData(ModAttachments.PLAYER_RPG_DATA.get()).resetAttributes();
+        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
+        PlayerAttributeEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
     }
 }

@@ -1,15 +1,13 @@
 package com.rpgcore.experience;
 
+import com.rpgcore.attributes.AttributeFormulaCalculator;
+
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 
 /** Pure calculations for the Experience Loot attribute. */
 public final class ExperienceLootCalculator {
-    /**
-     * Initial balance value: each allocated point grants two percentage points.
-     * This remains a provisional gameplay-balance value.
-     */
-    public static final int PERCENT_PER_POINT = 2;
-
     /**
      * ExperienceOrb stores its Value as a signed short in entity save data.
      * Keep custom values positive after a world save/reload.
@@ -21,9 +19,6 @@ public final class ExperienceLootCalculator {
             2477, 1237, 617, 307, 149, 73, 37, 17, 7, 3, 1
     };
 
-    private static final BigInteger ONE_HUNDRED = BigInteger.valueOf(100L);
-    private static final BigInteger PERCENT_PER_POINT_BIG =
-            BigInteger.valueOf(PERCENT_PER_POINT);
     private static final BigInteger MAX_ORB_VALUE =
             BigInteger.valueOf(MAX_PERSISTABLE_ORB_VALUE);
 
@@ -49,13 +44,12 @@ public final class ExperienceLootCalculator {
     }
 
     /**
-     * Applies the user's per-batch rule:
-     * P = floor(S * (1 + 2% * points))
-     * Q = P // (max(2, N) - 1)
+     * Applies the agreed per-batch rule:
+     * T' = floor(T * (1 + miningFormulaSum(experienceLootPoints) / 100))
+     * Q  = T' // (max(2, N) - 1)
      *
-     * Every one of the N logical orbs is then created with denomination Q.
-     * Q is capped to the largest positive signed-short value so it remains
-     * valid when Minecraft saves and reloads the orb entity.
+     * Every one of the N logical orbs receives denomination Q. Integer
+     * division remainders are intentionally discarded.
      */
     public static int calculateOrbValue(
             long totalExperience,
@@ -67,13 +61,18 @@ public final class ExperienceLootCalculator {
             return 0;
         }
 
-        BigInteger multiplier = ONE_HUNDRED.add(
-                BigInteger.valueOf(experienceLootPoints)
-                        .multiply(PERCENT_PER_POINT_BIG));
+        double bonusPercent =
+                AttributeFormulaCalculator.experienceLootBonusPercent(experienceLootPoints);
+        if (!Double.isFinite(bonusPercent) || bonusPercent <= 0.0) {
+            return 0;
+        }
 
-        BigInteger boostedTotal = BigInteger.valueOf(totalExperience)
+        BigDecimal multiplier = BigDecimal.ONE.add(
+                BigDecimal.valueOf(bonusPercent).movePointLeft(2));
+        BigInteger boostedTotal = BigDecimal.valueOf(totalExperience)
                 .multiply(multiplier)
-                .divide(ONE_HUNDRED);
+                .setScale(0, RoundingMode.DOWN)
+                .toBigInteger();
 
         long divisor = Math.max(2L, originalOrbCount) - 1L;
         BigInteger orbValue = boostedTotal.divide(BigInteger.valueOf(divisor));

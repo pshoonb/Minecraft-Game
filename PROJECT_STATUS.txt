@@ -14,22 +14,32 @@ Implemented in source:
 - Free attribute reset.
 - Server-authoritative attribute allocation and reset.
 - Per-player attachment persistence and UUID-checked client sync.
-- Attribute screen displays the eight intended attributes and their allocated points.
-- Intended effects are documented in the UI; seven gameplay conversions are marked as not implemented until balance rules are set.
-- Experience Loot effect text is calculated from the same provisional balance constant as the server XP calculation.
+- Attribute screen displays each attribute's allocated points and calculated total effect.
+- Strength adds the cumulative 2/x result as flat Minecraft damage points to player-caused damage.
+- Defense reduces all damage received by players with an asymptotic 80% soft cap.
+- Health increases maximum health and heals by the same actual amount when maximum health rises.
+- Mining Speed multiplies player block-breaking speed by its cumulative formula percentage.
+- Movement Speed uses a transient multiplicative-base movement-speed modifier.
+- Jump Height adds launch velocity corresponding to the cumulative height formula.
+- Luck adds 1-15 extra items to eligible ore-block drops. Base weights are 150, 145, ... 80; the weight exponent flattens with current Luck so larger quantities become relatively more likely.
+- Luck multiplies vanilla worn-equipment drop chances by its cumulative percentage formula.
+- Experience Loot reuses the Mining Speed cumulative percentage formula.
+- Each LivingExperienceDropEvent batch uses the agreed per-orb denomination calculation:
+  T' = floor(T * (1 + bonusPercent / 100))
+  Q = T' // (max(2, N) - 1)
+  Each of the N logical orbs receives Q; integer division remainders are discarded.
 - Experience Loot participation tracking refreshes on successful player damage and expires after 60 seconds.
 - Offline participants remain eligible for 60 seconds after their last successful hit and use their most recent logout snapshot.
-- Each LivingExperienceDropEvent batch uses the agreed per-orb denomination calculation.
+- Each LivingExperienceDropEvent batch uses the kill-time Experience Loot snapshot.
 - Nearby pre-existing XP orbs are not searched or rewritten; multi-batch XP drops are processed separately.
 
-Not implemented:
-- Numeric Minecraft gameplay conversion for Strength, Defense, Health, Mining Speed, Movement Speed, Jump Height and Luck; their point allocation and intended effects are present, but the actual rates/effects are not connected.
-- Final balancing of Experience Loot's provisional +2% per point.
-- Exploration, quest, gathering, monster scaling, equipment and loot systems.
+Limitations / not yet implemented:
+- The generic entity loot-table item probability is not modified. NeoForge 21.1.265 exposes a mutable chance for worn-equipment drops, which is handled above, but does not expose a generic mutable base probability for every item-drop condition.
+- Luck does not yet adjust every custom or vanilla loot-table condition that lacks a direct chance event.
+- No dedicated in-game balance test has been run; the build and a multiplayer play test are still required.
+- Exploration, quest, gathering, monster scaling, equipment and loot systems remain out of scope.
 
-Data note:
-- The project does not yet have players using these attributes. The previous placeholder fields Agility, Constitution, Intelligence and Spirit have been replaced by the eight intended fields without a player-data migration.
-
-Validation:
-- Source and documentation changes are committed to main.
-- A fresh Gradle/NeoForge build and in-game test are required for this revision.
+Implementation notes:
+- Cumulative sums use exact evaluation for the first 8,192 points and short midpoint intervals thereafter to avoid unbounded work for high-level characters.
+- Defense's 80% soft cap uses 80 * (1 - exp(-rawReduction / 80)).
+- Player modifiers are transient and reapplied on login and respawn from persistent RPG attachment data.

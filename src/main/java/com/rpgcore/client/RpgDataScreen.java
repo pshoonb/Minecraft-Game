@@ -1,8 +1,8 @@
 package com.rpgcore.client;
 
+import com.rpgcore.attributes.AttributeFormulaCalculator;
 import com.rpgcore.data.PlayerAttribute;
 import com.rpgcore.data.PlayerRpgData;
-import com.rpgcore.experience.ExperienceLootCalculator;
 import com.rpgcore.network.AllocateAttributePayload;
 import com.rpgcore.network.RequestRpgDataPayload;
 import com.rpgcore.network.ResetAttributesPayload;
@@ -13,9 +13,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.math.BigInteger;
+import java.util.Locale;
 
-/** Player level, allocated points, and the intended/current effect of each attribute. */
+/** Player level, allocated points, and the calculated effect of each attribute. */
 public final class RpgDataScreen extends Screen {
     private static final int PANEL_WIDTH = 410;
     private static final int PANEL_HEIGHT = 236;
@@ -29,6 +29,7 @@ public final class RpgDataScreen extends Screen {
     private StringWidget levelLabel;
     private StringWidget pointsLabel;
     private StringWidget waitingLabel;
+    private PlayerRpgData lastDisplayedData;
 
     public RpgDataScreen() { this(null); }
 
@@ -96,22 +97,42 @@ public final class RpgDataScreen extends Screen {
         return addRenderableOnly(widget);
     }
 
+    private static String fmt(double value) {
+        return String.format(Locale.ROOT, "%.2f", value);
+    }
+
     private void updateAttributeRows(PlayerRpgData data) {
-        BigInteger experienceLootBonus = BigInteger.valueOf(data.experienceLoot())
-                .multiply(BigInteger.valueOf(ExperienceLootCalculator.PERCENT_PER_POINT));
+        if (data.equals(lastDisplayedData)) {
+            return;
+        }
+        lastDisplayedData = data;
+
+        double strength = AttributeFormulaCalculator.strengthDamage(data.strength());
+        double defense = AttributeFormulaCalculator.defenseReductionPercent(data.defense());
+        double health = AttributeFormulaCalculator.healthBonus(data.health());
+        double mining = AttributeFormulaCalculator.miningSpeedPercent(data.miningSpeed());
+        double movement = AttributeFormulaCalculator.movementSpeedPercent(data.speed());
+        double jump = AttributeFormulaCalculator.jumpHeightBlocks(data.jumpHeight());
+        double luck = AttributeFormulaCalculator.luckEquipmentDropBonusPercent(data.luck());
+        double experience = AttributeFormulaCalculator.experienceLootBonusPercent(data.experienceLoot());
 
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             PlayerAttribute attribute = ATTRIBUTES[i];
             valueLabels[i].setMessage(Component.translatable(
                     "screen.rpgcore.stat.points", Long.toString(data.valueOf(attribute))));
 
-            if (attribute == PlayerAttribute.EXPERIENCE_LOOT) {
-                effectLabels[i].setMessage(Component.translatable(
-                        "screen.rpgcore.effect.experience_loot", experienceLootBonus.toString()));
-            } else {
-                effectLabels[i].setMessage(Component.translatable(
-                        "screen.rpgcore.effect." + attribute.serializedName()));
-            }
+            String value = switch (attribute) {
+                case STRENGTH -> fmt(strength);
+                case DEFENSE -> fmt(defense);
+                case HEALTH -> fmt(health);
+                case MINING_SPEED -> fmt(mining);
+                case SPEED -> fmt(movement);
+                case JUMP_HEIGHT -> fmt(jump);
+                case LUCK -> fmt(luck);
+                case EXPERIENCE_LOOT -> fmt(experience);
+            };
+            effectLabels[i].setMessage(Component.translatable(
+                    "screen.rpgcore.effect." + attribute.serializedName(), value));
         }
     }
 
