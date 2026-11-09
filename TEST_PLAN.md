@@ -13,7 +13,11 @@
 - [ ] Close the RPG panel and verify it returns to the inventory screen.
 - [ ] Verify the P key no longer opens the RPG panel and does not interfere with vanilla controls.
 - [ ] Opening the RPG panel requests a server snapshot.
-- [ ] The sixth attribute, Experience Loot, appears and can be allocated.\n- [ ] Each attribute row displays the allocated point count and a separate current-effect description.\n- [ ] Experience Loot displays a dynamic percentage based on its points and the same provisional per-point constant used by the server calculation.\n- [ ] Strength, Agility, Constitution, Intelligence and Spirit explicitly show that their gameplay conversions are not connected yet, rather than displaying invented bonuses.\n- [ ] The expanded panel remains readable at common GUI scales in both Simplified Chinese and English.
+- [ ] The sixth attribute, Experience Loot, appears and can be allocated.
+- [ ] Each attribute row displays the allocated point count and a separate current-effect description.
+- [ ] Experience Loot displays a dynamic percentage based on its points and the same provisional per-point constant used by the server calculation.
+- [ ] Strength, Agility, Constitution, Intelligence and Spirit explicitly show that their gameplay conversions are not connected yet, rather than displaying invented bonuses.
+- [ ] The expanded panel remains readable at common GUI scales in both Simplified Chinese and English.
 - [ ] Existing player attachment data loads with Experience Loot defaulting to zero.
 - [ ] Logout/login, death/respawn and dedicated-server restart preserve the allocated attribute values.
 

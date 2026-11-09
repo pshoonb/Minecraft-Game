@@ -16,5 +16,5 @@
   "button.rpgcore.open_panel": "RPG 属性面板",
   "screen.rpgcore.stat.points": "%s 点",
   "screen.rpgcore.effect.pending": "当前效果：尚未接入游戏数值",
-  "screen.rpgcore.effect.experience_loot": "当前效果：经验计算倍率 +%s％（每点 2％，临时规则）"
+  "screen.rpgcore.effect.experience_loot": "当前效果：经验计算加成 +%s％（每点 2％，暂定）"
 }

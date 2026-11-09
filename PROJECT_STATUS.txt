@@ -16,7 +16,10 @@ Implemented in source:
 - Server-authoritative attribute allocation and reset.
 - Per-player attachment persistence and UUID-checked client sync.
 - Inventory-screen button opens the attribute panel; the conflicting P-key binding has been removed.
-- Attribute panel supports English and Simplified Chinese localization.\n- Attribute rows show allocated points separately from current effect descriptions.\n- Experience Loot effect text is dynamically calculated from the shared provisional server balance constant.\n- The five other attributes explicitly display that gameplay conversion is not connected yet; no unapproved values are presented.
+- Attribute panel supports English and Simplified Chinese localization.
+- Attribute rows show allocated points separately from current effect descriptions.
+- Experience Loot effect text is dynamically calculated from the shared provisional server balance constant.
+- The five other attributes explicitly display that gameplay conversion is not connected yet; no unapproved values are presented.
 - Experience Loot participation tracking refreshes on successful player damage and expires after 60 seconds.
 - A participant's latest Experience Loot value is refreshed on every hit and captured again on logout.
 - Offline participants remain eligible for 60 seconds after their last successful hit; online participants are read live at the entity's death, while offline participants use their latest logout snapshot.
@@ -25,7 +28,6 @@ Implemented in source:
 - Multi-batch entity XP drops, including Ender Dragon waves, are processed batch by batch.
 
 Not implemented:
-- Attribute-to-gameplay conversion (health/attack/armor/speed etc.) for the other five attributes; exact ratios not approved.
 - Gameplay conversion formulas and actual Minecraft effects for Strength, Agility, Constitution, Intelligence and Spirit; their point counts are shown, but their active effects are not implemented.
 - Exploration, quest, and gathering-specific rewards.
 - Monster level scaling, equipment, loot, quests, exploration content.
