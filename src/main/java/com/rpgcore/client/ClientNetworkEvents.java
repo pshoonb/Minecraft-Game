@@ -1,6 +1,7 @@
 package com.rpgcore.client;
 
 import com.rpgcore.RpgCoreMod;
+import com.rpgcore.network.ClientPayloadHandler;
 import com.rpgcore.network.SyncRpgDataPayload;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
