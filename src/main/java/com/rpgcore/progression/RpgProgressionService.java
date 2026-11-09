@@ -24,10 +24,15 @@ public final class RpgProgressionService {
         PlayerRpgData updated = current.progressionInitialized()
                 ? current.withVanillaLevel(vanillaLevel)
                 : current.initializeProgression(vanillaLevel);
+
         if (!updated.equals(current)) {
             player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
             NetworkHandler.sendSnapshot(player);
         }
+
+        // Always rebuild transient effects: this also restores them after respawn
+        // and ensures existing worlds receive effects immediately after updating.
+        RpgGameplayEffects.apply(player, updated);
     }
 
     public static void allocateAttribute(ServerPlayer player, PlayerAttribute attribute, int amount) {
@@ -36,14 +41,18 @@ public final class RpgProgressionService {
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
         if (current.availableAttributePoints() < amount) return;
 
-        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), current.addAttribute(attribute, amount));
+        PlayerRpgData updated = current.addAttribute(attribute, amount);
+        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
+        RpgGameplayEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
     }
 
     public static void resetAttributes(ServerPlayer player) {
         syncVanillaLevel(player);
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), current.resetAttributes());
+        PlayerRpgData updated = current.resetAttributes();
+        player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
+        RpgGameplayEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
     }
 }
