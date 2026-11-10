@@ -1,9 +1,11 @@
 package com.rpgcore.attributes;
 
+import com.rpgcore.client.ClientRpgDataCache;
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerRpgData;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.Tags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -18,10 +20,77 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /** Server-side hooks for the RPG attributes that affect vanilla gameplay. */
 public final class RpgAttributeEvents {
     private RpgAttributeEvents() {
+    }
+
+    private static final float BASE_AIR_CONTROL_SPEED = 0.02F;
+
+    /**
+     * Applies the Speed attribute's existing percentage bonus to airborne
+     * horizontal steering. Vanilla uses a separate fixed air-control speed,
+     * so the MOVEMENT_SPEED attribute alone does not affect this movement.
+     *
+     * <p>The same calculation runs on the logical client (for immediate local
+     * movement) and server (for authoritative movement). Only the active
+     * player's synced RPG data is used on the client.</p>
+     */
+    public static void onPlayerTickPre(PlayerTickEvent.Pre event) {
+        Player player = event.getEntity();
+        PlayerRpgData data;
+
+        if (player.level().isClientSide()) {
+            if (!ClientRpgDataCache.hasServerData()) {
+                return;
+            }
+            data = ClientRpgDataCache.get();
+        } else if (player instanceof ServerPlayer serverPlayer) {
+            data = serverPlayer.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        } else {
+            return;
+        }
+
+        applyAirMovementSpeedBonus(player, data);
+    }
+
+    private static void applyAirMovementSpeedBonus(Player player, PlayerRpgData data) {
+        // Keep ground movement, swimming, mounted movement, and special flight
+        // under their existing vanilla/attribute handling.
+        if (player.onGround()
+                || player.isInWater()
+                || player.isInLava()
+                || player.isFallFlying()
+                || player.getAbilities().flying
+                || player.isPassenger()
+                || player.onClimbable()
+                || player.isSleeping()
+                || player.isSpectator()) {
+            return;
+        }
+
+        double bonusPercent = AttributeFormulaCalculator.movementSpeedPercent(data.speed());
+        if (!Double.isFinite(bonusPercent) || bonusPercent <= 0.0) {
+            return;
+        }
+
+        Vec3 input = new Vec3(player.xxa, 0.0, player.zza);
+        if (input.lengthSqr() < 1.0E-7) {
+            return;
+        }
+
+        float additionalAirControl =
+                (float) (BASE_AIR_CONTROL_SPEED * bonusPercent / 100.0);
+        if (!Float.isFinite(additionalAirControl) || additionalAirControl <= 0.0F) {
+            return;
+        }
+
+        // moveRelative applies the same input normalization and yaw rotation
+        // used by vanilla movement, adding only the matching percentage of
+        // vanilla's fixed airborne steering acceleration.
+        player.moveRelative(additionalAirControl, input);
     }
 
     /**
