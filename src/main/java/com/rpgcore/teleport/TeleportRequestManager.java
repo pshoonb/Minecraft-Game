@@ -72,6 +72,13 @@ public final class TeleportRequestManager {
             return;
         }
 
+        PlayerRpgData targetData = target.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        if (!targetData.teleportUnlocked()) {
+            RpgProgressionService.showTeleportFailure(
+                    requester, "message.rpgcore.teleport.request_send_failed");
+            return;
+        }
+
         expireRequests(server, System.currentTimeMillis());
 
         Map<UUID, PendingRequest> targetRequests =
