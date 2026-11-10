@@ -92,17 +92,7 @@ public final class AttributeFormulaCalculator {
      * expm1 is used to avoid cancellation for small point counts.</p>
      */
     public static double jumpHeightBlocks(long points) {
-        if (points <= 0L) {
-            return 0.0;
-        }
-
-        double n = (double) points;
-        double exponent = -0.03;
-        double q = Math.exp(exponent);
-        double geometricSum = q
-                * -Math.expm1(exponent * n)
-                / -Math.expm1(exponent);
-        return 0.01 * n + 0.49 * geometricSum;
+        return points <= 0L ? 0.0 : 0.1 * (double) points;
     }
 
     /** Luck reuses the mining-speed percentage formula for mob equipment chances. */
