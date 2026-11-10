@@ -3,6 +3,8 @@ package com.rpgcore.teleport;
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerRpgData;
 import com.rpgcore.progression.RpgProgressionService;
+import com.rpgcore.network.NetworkHandler;
+import com.rpgcore.network.TeleportIncomingRequestsPayload;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -138,6 +140,7 @@ public final class TeleportRequestManager {
                 System.currentTimeMillis() + REQUEST_TIMEOUT_MILLIS,
                 ++nextRequestSequence);
         targetRequests.put(requester.getUUID(), pending);
+        sendIncomingRequests(target);
 
         target.sendSystemMessage(Component.translatable(
                 "message.rpgcore.teleport.request_received",
@@ -211,10 +214,25 @@ public final class TeleportRequestManager {
         return accepted > 0 ? Command.SINGLE_SUCCESS : 0;
     }
 
+    public static int respondFromScreen(ServerPlayer target, UUID requesterId, boolean accept) {
+        MinecraftServer server = target.getServer();
+        if (server == null) return 0;
+        expireRequests(server, System.currentTimeMillis());
+        return accept ? acceptPending(target, requesterId, server) : denyPending(target, requesterId, server);
+    }
+
+    public static void sendIncomingRequests(ServerPlayer target) {
+        List<TeleportIncomingRequestsPayload.Request> requests = pendingForTarget(target.getUUID()).stream()
+                .map(p -> new TeleportIncomingRequestsPayload.Request(p.requesterId(), p.requesterName()))
+                .toList();
+        NetworkHandler.sendIncomingRequests(target, requests);
+    }
+
     /** Removes and processes one request by requester UUID. */
     private static int acceptPending(
             ServerPlayer target, UUID requesterId, MinecraftServer server) {
         PendingRequest pending = removePending(target.getUUID(), requesterId);
+        sendIncomingRequests(target);
         if (pending == null) {
             showNoPendingRequests(target);
             return 0;
@@ -397,6 +415,8 @@ public final class TeleportRequestManager {
                 }
 
                 requestIterator.remove();
+                ServerPlayer updatedTarget = server.getPlayerList().getPlayer(pending.targetId());
+                if (updatedTarget != null) sendIncomingRequests(updatedTarget);
                 ServerPlayer requester = server.getPlayerList().getPlayer(pending.requesterId());
                 if (requester != null) {
                     RpgProgressionService.showTeleportFailure(
@@ -451,6 +471,7 @@ public final class TeleportRequestManager {
             if (cancelled != null) {
                 ServerPlayer target = server.getPlayerList().getPlayer(targetEntry.getKey());
                 if (target != null && target != leavingPlayer) {
+                    sendIncomingRequests(target);
                     target.sendSystemMessage(Component.translatable(
                             "message.rpgcore.teleport.requester_went_offline",
                             cancelled.requesterName()));
