@@ -35,9 +35,10 @@ public final class RpgProgressionService {
         if (attribute == null || amount < 1 || amount > 100) return;
         syncVanillaLevel(player);
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        if (current.availableAttributePoints() < amount) return;
+        int allocatedAmount = (int) Math.min((long) amount, current.availableAttributePoints());
+        if (allocatedAmount <= 0) return;
 
-        PlayerRpgData updated = current.addAttribute(attribute, amount);
+        PlayerRpgData updated = current.addAttribute(attribute, allocatedAmount);
         player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
         PlayerAttributeEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
