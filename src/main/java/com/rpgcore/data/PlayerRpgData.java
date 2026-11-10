@@ -126,13 +126,13 @@ public record PlayerRpgData(
 
     private PlayerRpgData withAttributeValue(PlayerAttribute attribute, long value) {
         return switch (attribute) {
-            case STRENGTH -> withAttributes(value, defense, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
-            case DEFENSE -> withAttributes(strength, value, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
-            case HEALTH -> withAttributes(strength, defense, value, miningSpeed, speed, jumpHeight, luck, experienceLoot);
-            case MINING_SPEED -> withAttributes(strength, defense, health, value, speed, jumpHeight, luck, experienceLoot);
-            case SPEED -> withAttributes(strength, defense, health, miningSpeed, value, jumpHeight, luck, experienceLoot);
-            case JUMP_HEIGHT -> withAttributes(strength, defense, health, miningSpeed, speed, value, luck, experienceLoot);
-            case LUCK -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, value, experienceLoot);
+            case STRENGTH -> withAttributes(value, defense, health, miningSpeed, speed, jumpHeight, luck, experienceLoot, waterBreathing);
+            case DEFENSE -> withAttributes(strength, value, health, miningSpeed, speed, jumpHeight, luck, experienceLoot, waterBreathing);
+            case HEALTH -> withAttributes(strength, defense, value, miningSpeed, speed, jumpHeight, luck, experienceLoot, waterBreathing);
+            case MINING_SPEED -> withAttributes(strength, defense, health, value, speed, jumpHeight, luck, experienceLoot, waterBreathing);
+            case SPEED -> withAttributes(strength, defense, health, miningSpeed, value, jumpHeight, luck, experienceLoot, waterBreathing);
+            case JUMP_HEIGHT -> withAttributes(strength, defense, health, miningSpeed, speed, value, luck, experienceLoot, waterBreathing);
+            case LUCK -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, value, experienceLoot, waterBreathing);
             case EXPERIENCE_LOOT -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, value, waterBreathing);
             case WATER_BREATHING -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, experienceLoot, value);
         };
