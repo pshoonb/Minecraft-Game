@@ -123,14 +123,14 @@ public final class PlayerTeleportScreen extends Screen {
 
     private void updateLayout(int targetCount) {
         int maxPanelHeight = Math.max(140, height - 24);
-        int maxListHeight = Math.max(ROW_HEIGHT, Math.min(240, maxPanelHeight - 124));
+        int maxListHeight = Math.max(ROW_HEIGHT, Math.min(240, maxPanelHeight - 144));
         int desiredListHeight = Math.max(ROW_HEIGHT * 2, targetCount * ROW_HEIGHT);
         int listHeight = Math.min(maxListHeight, desiredListHeight);
 
-        int panelHeight = 124 + listHeight;
+        int panelHeight = 144 + listHeight;
         panelTop = Math.max(12, (height - panelHeight) / 2);
         panelBottom = panelTop + panelHeight;
-        listTop = panelTop + 58;
+        listTop = panelTop + 78;
         listBottom = listTop + listHeight;
         footerY = listBottom + 34;
 
