@@ -90,8 +90,8 @@ public final class RpgProgressionService {
     }
 
     /**
-     * Validates the selected target on the server. A target who has unlocked
-     * TP must explicitly approve the request; otherwise the teleport is immediate.
+     * Validates the selected target on the server. Both players must have TP
+     * unlocked, and the target must explicitly approve the teleport request.
      */
     public static void teleportToPlayer(ServerPlayer player, UUID targetId) {
         PlayerRpgData requesterData = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
@@ -112,12 +112,12 @@ public final class RpgProgressionService {
         }
 
         PlayerRpgData targetData = target.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        if (targetData.teleportUnlocked()) {
-            TeleportRequestManager.request(player, target);
+        if (!targetData.teleportUnlocked()) {
+            showTeleportFailure(player, "message.rpgcore.teleport.request_send_failed");
             return;
         }
 
-        completeTeleport(player, target);
+        TeleportRequestManager.request(player, target);
     }
 
     /**
