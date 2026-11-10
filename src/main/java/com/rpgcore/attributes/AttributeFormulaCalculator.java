@@ -15,6 +15,23 @@ public final class AttributeFormulaCalculator {
     private static final long APPROXIMATION_INTERVAL_DIVISOR = 1_000L;
     private static final double DEFENSE_SOFT_CAP_PERCENT = 80.0;
     private static final double EULER_MASCHERONI = 0.5772156649015328606;
+    private static final double[] HARMONIC_NUMBERS_BELOW_16 = {
+            1.0,
+            1.5,
+            1.8333333333333333,
+            2.0833333333333333,
+            2.2833333333333333,
+            2.45,
+            2.592857142857143,
+            2.717857142857143,
+            2.828968253968254,
+            2.928968253968254,
+            3.0198773448773446,
+            3.103210678210678,
+            3.180133755133755,
+            3.2515623265623265,
+            3.318228993228993
+    };
 
     private static final int[] MINERAL_BASE_WEIGHTS = {
             150, 145, 140, 135, 130, 125, 120, 115,
@@ -106,8 +123,8 @@ public final class AttributeFormulaCalculator {
     /**
      * Evaluates the harmonic number H_n = sum(1/k, k=1..n).
      *
-     * <p>For n < 16, direct summation is cheaper and avoids asymptotic
-     * expansion error. For n >= 16, the Euler-Maclaurin expansion through
+     * <p>For n < 16, a precomputed exact-prefix lookup avoids summation.
+     * For n >= 16, the Euler-Maclaurin expansion through
      * the n^-22 term is used. Its truncation error at the threshold is far
      * below double precision, and runtime is constant with respect to n.</p>
      */
@@ -117,11 +134,7 @@ public final class AttributeFormulaCalculator {
         }
 
         if (n < 16L) {
-            double total = 0.0;
-            for (long k = 1L; k <= n; k++) {
-                total += 1.0 / (double) k;
-            }
-            return total;
+            return HARMONIC_NUMBERS_BELOW_16[(int) n - 1];
         }
 
         double inverse = 1.0 / (double) n;
