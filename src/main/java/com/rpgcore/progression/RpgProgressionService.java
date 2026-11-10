@@ -31,14 +31,29 @@ public final class RpgProgressionService {
         }
     }
 
-    public static void allocateAttribute(ServerPlayer player, PlayerAttribute attribute, int amount) {
-        if (attribute == null || amount < 1 || amount > 100) return;
+    /**
+     * Applies a signed attribute adjustment. Positive values allocate available
+     * points; negative values refund points from that attribute, clamped at zero.
+     */
+    public static void changeAttribute(ServerPlayer player, PlayerAttribute attribute, int amount) {
+        if (attribute == null || amount == 0 || amount < -100 || amount > 100) return;
+
         syncVanillaLevel(player);
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        int allocatedAmount = (int) Math.min((long) amount, current.availableAttributePoints());
-        if (allocatedAmount <= 0) return;
+        PlayerRpgData updated;
 
-        PlayerRpgData updated = current.addAttribute(attribute, allocatedAmount);
+        if (amount > 0) {
+            int allocatedAmount = (int) Math.min((long) amount, current.availableAttributePoints());
+            if (allocatedAmount <= 0) return;
+            updated = current.addAttribute(attribute, allocatedAmount);
+        } else {
+            long requestedRefund = -(long) amount;
+            long refundableAmount = Math.min(requestedRefund, current.valueOf(attribute));
+            if (refundableAmount <= 0L) return;
+            updated = current.removeAttribute(attribute, refundableAmount);
+        }
+
+        if (updated.equals(current)) return;
         player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
         PlayerAttributeEffects.apply(player, updated);
         NetworkHandler.sendSnapshot(player);
