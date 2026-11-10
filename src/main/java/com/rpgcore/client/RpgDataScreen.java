@@ -265,16 +265,13 @@ public final class RpgDataScreen extends Screen {
             teleportUnlockButton.active = false;
             teleportUnlockButton.setTooltip(Tooltip.create(
                     Component.translatable("screen.rpgcore.teleport.require_level")));
-        } else if (data.availableAttributePoints() < PlayerRpgData.TELEPORT_UNLOCK_COST) {
-            teleportUnlockButton.setMessage(Component.translatable("screen.rpgcore.teleport.unlock"));
-            teleportUnlockButton.active = false;
-            teleportUnlockButton.setTooltip(Tooltip.create(Component.translatable(
-                    "screen.rpgcore.teleport.need_points", data.availableAttributePoints())));
         } else {
+            // Level 30 is the unlock eligibility gate. The server reports insufficient
+            // points after a click, so the button itself is never disabled after level 30.
             teleportUnlockButton.setMessage(Component.translatable("screen.rpgcore.teleport.unlock"));
             teleportUnlockButton.active = true;
             teleportUnlockButton.setTooltip(Tooltip.create(Component.translatable(
-                    "screen.rpgcore.teleport.unlock_cost")));
+                    "screen.rpgcore.teleport.unlock_cost", data.availableAttributePoints())));
         }
     }
 
