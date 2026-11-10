@@ -1,14 +1,18 @@
 package com.rpgcore.client;
 
 import com.rpgcore.RpgCoreMod;
+import com.rpgcore.attributes.AttributeFormulaCalculator;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
  * Adds an RPG Core entry point to the player's inventory screen.
@@ -38,4 +42,22 @@ public final class ClientForgeEvents {
 
         event.addListener(openPanelButton);
     }
+    /**
+     * Mirrors the server-side mining bonus in the local player's dig-speed
+     * calculation so block-breaking progress and server completion stay aligned.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
+        if (!(event.getEntity() instanceof LocalPlayer)
+                || !ClientRpgDataCache.hasServerData()) {
+            return;
+        }
+
+        long points = ClientRpgDataCache.get().miningSpeed();
+        double bonusPercent = AttributeFormulaCalculator.miningSpeedPercent(points);
+        if (bonusPercent > 0.0) {
+            event.setNewSpeed((float) (event.getNewSpeed() * (1.0 + bonusPercent / 100.0)));
+        }
+    }
+
 }
