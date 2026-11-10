@@ -71,7 +71,8 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $installer = (Resolve-Path 'neoforge-21.1.265-installer.jar').Path
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name 'RPG-Core-Installer' --add-data "$installer;." --add-data "installer-version.txt;." --distpath 'dist' --workpath 'build/pyinstaller' --specpath 'build/pyinstaller' 'RPG_Core_一键安装_自动更新版.py'
+          $versionInfo = (Resolve-Path 'installer-version.txt').Path
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name 'RPG-Core-Installer' --add-data "$installer;." --add-data "$versionInfo;." --distpath 'dist' --workpath 'build/pyinstaller' --specpath 'build/pyinstaller' 'RPG_Core_一键安装_自动更新版.py'
           $exe = 'dist/RPG-Core-Installer.exe'
           if (-not (Test-Path $exe) -or (Get-Item $exe).Length -lt 1000000) {
             throw 'The packaged EXE was not created or is unexpectedly small.'
