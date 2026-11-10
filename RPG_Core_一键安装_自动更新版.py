@@ -451,6 +451,20 @@ def download_and_stage_installer_update(release_info, current_exe):
     update_dir = INSTALLER_CACHE_DIR / "InstallerUpdates"
     update_dir.mkdir(parents=True, exist_ok=True)
 
+    # Older updater versions could fail before consuming their staged EXE.
+    # Remove only abandoned staged copies older than the helper's 90-second
+    # process-wait window, leaving any recent in-progress update untouched.
+    stale_cutoff = datetime.now().timestamp() - 180.0
+    for stale_staged in current_exe.parent.glob(
+        current_exe.name + ".update-staged-*"
+    ):
+        try:
+            if stale_staged.is_file() and stale_staged.stat().st_mtime < stale_cutoff:
+                stale_staged.unlink()
+                print("Removed an abandoned staged installer copy: ", stale_staged.name, flush=True)
+        except OSError as exc:
+            print("Could not remove an abandoned staged installer copy: ", exc, flush=True)
+
     update_token = datetime.now().strftime("%Y%m%d%H%M%S") + f"-{os.getpid()}"
     download_path = update_dir / f"{INSTALLER_EXE_NAME}.{update_token}.download"
     staged_path = current_exe.with_name(
