@@ -54,12 +54,24 @@ jobs:
         run: |
           python -m py_compile 'RPG_Core_一键安装_自动更新版.py'
 
+      - name: Embed installer release version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $versionLine = Select-String -Path 'gradle.properties' -Pattern '^mod_version=' | Select-Object -First 1
+          if (-not $versionLine) {
+            throw 'mod_version was not found in gradle.properties.'
+          }
+          $version = ($versionLine.Line -split '=', 2)[1].Trim()
+          $tag = "v$version-build.$env:SOURCE_RUN_NUMBER"
+          Set-Content -Path 'installer-version.txt' -Value $tag -Encoding UTF8
+
       - name: Build one-file GUI executable
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $installer = (Resolve-Path 'neoforge-21.1.265-installer.jar').Path
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name 'RPG-Core-Installer' --add-data "$installer;." --distpath 'dist' --workpath 'build/pyinstaller' --specpath 'build/pyinstaller' 'RPG_Core_一键安装_自动更新版.py'
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name 'RPG-Core-Installer' --add-data "$installer;." --add-data "installer-version.txt;." --distpath 'dist' --workpath 'build/pyinstaller' --specpath 'build/pyinstaller' 'RPG_Core_一键安装_自动更新版.py'
           $exe = 'dist/RPG-Core-Installer.exe'
           if (-not (Test-Path $exe) -or (Get-Item $exe).Length -lt 1000000) {
             throw 'The packaged EXE was not created or is unexpectedly small.'
