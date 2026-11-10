@@ -43,6 +43,8 @@ JAVA_API = (
 )
 
 APP_NAME = "RPG Core Installer"
+INSTALLER_EXE_NAME = "RPG-Core-Installer.exe"
+INSTALLER_UPDATE_MAX_BYTES = 100 * 1024 * 1024
 IS_FROZEN = bool(getattr(sys, "frozen", False))
 BASE_DIR = (
     Path(sys.executable).resolve().parent
@@ -335,6 +337,326 @@ def ask_ok_cancel(text, parent=None):
     )
 
 
+def get_embedded_installer_version():
+    """Read the build tag embedded by the Windows packaging workflow."""
+
+    roots = []
+    if IS_FROZEN:
+        roots.append(Path(getattr(sys, "_MEIPASS", BASE_DIR)))
+    roots.append(BASE_DIR)
+
+    for root in roots:
+        version_file = root / "installer-version.txt"
+        try:
+            version = version_file.read_text(encoding="utf-8").strip()
+            if version:
+                return version
+        except OSError:
+            continue
+
+    return "Unversioned / local build"
+
+
+def get_latest_installer_release():
+    """Get the latest stable GitHub Release and its verified installer asset."""
+
+    with github_request(GITHUB_RELEASE_API, timeout=30) as response:
+        release = json.loads(response.read().decode("utf-8"))
+
+    if (
+        not isinstance(release, dict)
+        or release.get("draft")
+        or release.get("prerelease")
+    ):
+        raise RuntimeError("GitHub did not return a stable public Release.")
+
+    tag = release.get("tag_name")
+    assets = release.get("assets", [])
+    if not tag or not isinstance(assets, list):
+        raise RuntimeError("The latest GitHub Release metadata is incomplete.")
+
+    installer_assets = [
+        asset for asset in assets
+        if asset.get("name") == INSTALLER_EXE_NAME
+    ]
+
+    # A new Mod Release is created before its Windows EXE packaging job uploads
+    # the installer. During that short interval, simply skip the update check.
+    if not installer_assets:
+        print("The latest Release does not have its installer asset yet; skipping self-update.", flush=True)
+        return None
+
+    if len(installer_assets) != 1:
+        raise RuntimeError("The latest Release contains multiple installer EXE assets.")
+
+    asset = installer_assets[0]
+    download_url = asset.get("browser_download_url")
+    if (
+        not download_url
+        or not download_url.startswith(
+            "https://github.com/pshoonb/Minecraft-Game/releases/download/"
+        )
+    ):
+        raise RuntimeError("The installer download URL is not an approved GitHub Release URL.")
+
+    try:
+        size = int(asset.get("size", 0))
+    except (TypeError, ValueError):
+        size = 0
+
+    if size < 1_000_000 or size > INSTALLER_UPDATE_MAX_BYTES:
+        raise RuntimeError("The installer asset size is missing or outside the allowed range.")
+
+    expected_hash = None
+    digest = asset.get("digest")
+    if isinstance(digest, str):
+        algorithm, separator, value = digest.partition(":")
+        if separator and algorithm.lower() == "sha256":
+            expected_hash = value.strip().lower()
+
+    # Older Release API responses may not include the digest field.
+    if not expected_hash:
+        checksum_name = INSTALLER_EXE_NAME + ".sha256"
+        checksum_assets = [
+            item for item in assets
+            if item.get("name") == checksum_name
+        ]
+        if len(checksum_assets) == 1:
+            checksum_url = checksum_assets[0].get("browser_download_url")
+            if checksum_url and checksum_url.startswith(
+                "https://github.com/pshoonb/Minecraft-Game/releases/download/"
+            ):
+                with github_request(checksum_url, timeout=30) as response:
+                    checksum_text = response.read(4096).decode(
+                        "utf-8", errors="replace"
+                    )
+                match = re.search(r"\b([0-9a-fA-F]{64})\b", checksum_text)
+                if match:
+                    expected_hash = match.group(1).lower()
+
+    if not expected_hash or not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+        raise RuntimeError("The latest installer Release does not provide a valid SHA-256 checksum.")
+
+    return {
+        "tag": str(tag),
+        "url": download_url,
+        "sha256": expected_hash,
+        "size": size
+    }
+
+
+def download_and_stage_installer_update(release_info, current_exe):
+    """Download and verify the new EXE, then stage it beside the running EXE."""
+
+    update_dir = INSTALLER_CACHE_DIR / "InstallerUpdates"
+    update_dir.mkdir(parents=True, exist_ok=True)
+
+    update_token = datetime.now().strftime("%Y%m%d%H%M%S") + f"-{os.getpid()}"
+    download_path = update_dir / f"{INSTALLER_EXE_NAME}.{update_token}.download"
+    staged_path = current_exe.with_name(
+        current_exe.name + f".update-staged-{update_token}"
+    )
+    helper_path = update_dir / f"apply-update-{update_token}.ps1"
+
+    try:
+        request = urllib.request.Request(
+            release_info["url"],
+            headers={"User-Agent": "RPG-Core-Installer"}
+        )
+
+        downloaded_size = 0
+        with urllib.request.urlopen(request, timeout=120) as response:
+            content_length = response.headers.get("Content-Length")
+            if content_length:
+                try:
+                    if int(content_length) != release_info["size"]:
+                        raise RuntimeError("The downloaded installer size does not match the Release metadata.")
+                except ValueError:
+                    pass
+
+            with open(download_path, "wb") as output:
+                while True:
+                    block = response.read(1024 * 1024)
+                    if not block:
+                        break
+                    downloaded_size += len(block)
+                    if downloaded_size > INSTALLER_UPDATE_MAX_BYTES:
+                        raise RuntimeError("The downloaded installer exceeds the maximum allowed size.")
+                    output.write(block)
+
+        if downloaded_size != release_info["size"]:
+            raise RuntimeError("The downloaded installer size does not match the Release asset.")
+
+        actual_hash = file_hash(download_path).lower()
+        if actual_hash != release_info["sha256"]:
+            raise RuntimeError("The downloaded installer failed SHA-256 verification.")
+
+        with open(download_path, "rb") as downloaded:
+            if downloaded.read(2) != b"MZ":
+                raise RuntimeError("The downloaded file is not a valid Windows executable.")
+
+        # Stage the verified file on the same volume as the running EXE. This
+        # catches folder-permission problems before asking the updater to exit.
+        shutil.copyfile(download_path, staged_path)
+        if file_hash(staged_path).lower() != release_info["sha256"]:
+            raise RuntimeError("The staged installer failed SHA-256 verification.")
+
+        helper_source = r"""param(
+    [int]$ParentPid,
+    [string]$CurrentExe,
+    [string]$StagedExe,
+    [string]$UpdateToken,
+    [string]$LogPath
+)
+
+$ErrorActionPreference = 'Stop'
+$backupPath = "$CurrentExe.update-previous-$UpdateToken"
+$deadline = (Get-Date).AddSeconds(60)
+
+try {
+    while (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) {
+        if ((Get-Date) -gt $deadline) {
+            throw 'The old installer did not exit in time.'
+        }
+        Start-Sleep -Milliseconds 250
+    }
+
+    if (-not (Test-Path -LiteralPath $StagedExe -PathType Leaf)) {
+        throw 'The verified staged installer is missing.'
+    }
+    if (Test-Path -LiteralPath $backupPath) {
+        throw 'A temporary rollback file already exists; refusing to overwrite it.'
+    }
+
+    [System.IO.File]::Move($CurrentExe, $backupPath)
+
+    try {
+        [System.IO.File]::Move($StagedExe, $CurrentExe)
+        $workingDirectory = Split-Path -LiteralPath $CurrentExe -Parent
+        $newProcess = Start-Process -FilePath $CurrentExe -WorkingDirectory $workingDirectory -PassThru
+        Start-Sleep -Milliseconds 1500
+
+        if ($newProcess.HasExited) {
+            throw 'The updated installer exited immediately after launch.'
+        }
+
+        Remove-Item -LiteralPath $backupPath -Force
+        ('Installer update succeeded: ' + $CurrentExe) | Set-Content -LiteralPath $LogPath -Encoding UTF8
+    }
+    catch {
+        if (Test-Path -LiteralPath $CurrentExe) {
+            Remove-Item -LiteralPath $CurrentExe -Force
+        }
+        if (Test-Path -LiteralPath $backupPath) {
+            [System.IO.File]::Move($backupPath, $CurrentExe)
+        }
+        throw
+    }
+}
+catch {
+    ($_ | Out-String) | Set-Content -LiteralPath $LogPath -Encoding UTF8
+    exit 1
+}
+""";
+
+        helper_path.write_text(helper_source, encoding="utf-8-sig")
+
+        log_path = update_dir / "installer-update.log"
+        powershell = os.path.join(
+            os.environ.get("WINDIR", r"C:\Windows"),
+            "System32",
+            "WindowsPowerShell",
+            "v1.0",
+            "powershell.exe"
+        )
+
+        if not Path(powershell).is_file():
+            powershell = "powershell.exe"
+
+        creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        subprocess.Popen(
+            [
+                powershell,
+                "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle", "Hidden",
+                "-ExecutionPolicy", "Bypass",
+                "-File", str(helper_path),
+                "-ParentPid", str(os.getpid()),
+                "-CurrentExe", str(current_exe),
+                "-StagedExe", str(staged_path),
+                "-UpdateToken", update_token,
+                "-LogPath", str(log_path)
+            ],
+            cwd=str(BASE_DIR),
+            close_fds=True,
+            creationflags=creation_flags
+        )
+
+        return True
+
+    except Exception:
+        staged_path.unlink(missing_ok=True)
+        helper_path.unlink(missing_ok=True)
+        raise
+
+    finally:
+        download_path.unlink(missing_ok=True)
+
+
+def check_frozen_installer_update():
+    """Check for a newer stable EXE and hand off replacement to PowerShell."""
+
+    try:
+        release_info = get_latest_installer_release()
+        if not release_info:
+            return False
+
+        current_exe = Path(sys.executable).resolve()
+        if not current_exe.is_file():
+            raise RuntimeError("The currently running installer EXE could not be located.")
+
+        current_hash = file_hash(current_exe).lower()
+        if current_hash == release_info["sha256"]:
+            print("The installer is already up to date.", flush=True)
+            return False
+
+        local_version = get_embedded_installer_version()
+        latest_version = release_info["tag"]
+
+        should_update = ask_yes_no(
+            "A new RPG Core installer is available on GitHub.\n\n"
+            f"Current installer: {local_version}\n"
+            f"Latest version: {latest_version}\n\n"
+            "The new EXE will be downloaded and checked with SHA-256 before replacing this file.\n"
+            "The installer will close briefly and then restart with the updated version.\n\n"
+            "Select “Yes” to update now, or “No” to continue with this version."
+        )
+
+        if not should_update:
+            print("The user chose to continue with the current installer.", flush=True)
+            return False
+
+        if download_and_stage_installer_update(release_info, current_exe):
+            show_info(
+                "The new installer has been downloaded and verified.\n\n"
+                "This window will close while the updater replaces the EXE. "
+                "The updated installer will then reopen automatically."
+            )
+            return True
+
+        return False
+
+    except Exception as exc:
+        show_warning(
+            "The installer update check could not be completed.\n\n"
+            f"Reason: {exc}\n\n"
+            "The current installer will be kept, and the installation will continue."
+        )
+        print("Packaged installer update check failed; continuing with the current version: ", exc, flush=True)
+        return False
+
+
 def check_installer_update():
     """
     Compare the local installer with the version published on GitHub.
@@ -344,8 +666,7 @@ def check_installer_update():
     # The packaged EXE is updated by publishing a new Windows release asset.
     # Never replace an executable with the raw Python source file.
     if IS_FROZEN:
-        print("The packaged installer is updated through new EXE releases.", flush=True)
-        return False
+        return check_frozen_installer_update()
 
     installer_path = Path(__file__).resolve()
     temporary_path = installer_path.with_name(
