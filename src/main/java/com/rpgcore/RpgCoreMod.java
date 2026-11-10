@@ -28,6 +28,7 @@ public final class RpgCoreMod {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, RpgAttributeEvents::onBlockDrops);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, RpgAttributeEvents::onEquipmentDropChance);
         NeoForge.EVENT_BUS.addListener(RpgAttributeEvents::onLivingJump);
+        NeoForge.EVENT_BUS.addListener(RpgAttributeEvents::onPlayerTickPre);
 
         // Take the snapshot after other death-event listeners have had a chance
         // to cancel the death, and process the final XP amount after other mods.
