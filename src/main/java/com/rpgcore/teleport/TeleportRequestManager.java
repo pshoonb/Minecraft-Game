@@ -51,11 +51,15 @@ public final class TeleportRequestManager {
     public static void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("accept")
                 .executes(TeleportRequestManager::executeAcceptLatest)
+                .then(Commands.literal("*")
+                        .executes(context -> acceptAll(context.getSource().getPlayerOrException())))
                 .then(Commands.argument("player", StringArgumentType.word())
                         .suggests(TeleportRequestManager::suggestPendingRequesters)
                         .executes(TeleportRequestManager::executeAccept)));
         event.getDispatcher().register(Commands.literal("deny")
                 .executes(TeleportRequestManager::executeDenyLatest)
+                .then(Commands.literal("*")
+                        .executes(context -> denyAll(context.getSource().getPlayerOrException())))
                 .then(Commands.argument("player", StringArgumentType.word())
                         .suggests(TeleportRequestManager::suggestPendingRequesters)
                         .executes(TeleportRequestManager::executeDeny)));
@@ -70,7 +74,7 @@ public final class TeleportRequestManager {
             throws CommandSyntaxException {
         ServerPlayer target = context.getSource().getPlayerOrException();
         String requesterName = StringArgumentType.getString(context, "player");
-        return "*".equals(requesterName) ? acceptAll(target) : accept(target, requesterName);
+        return accept(target, requesterName);
     }
 
     private static int executeDenyLatest(CommandContext<CommandSourceStack> context)
@@ -82,7 +86,7 @@ public final class TeleportRequestManager {
             throws CommandSyntaxException {
         ServerPlayer target = context.getSource().getPlayerOrException();
         String requesterName = StringArgumentType.getString(context, "player");
-        return "*".equals(requesterName) ? denyAll(target) : deny(target, requesterName);
+        return deny(target, requesterName);
     }
 
     private static CompletableFuture<Suggestions> suggestPendingRequesters(
@@ -97,7 +101,6 @@ public final class TeleportRequestManager {
             expireRequests(server, System.currentTimeMillis());
         }
 
-        builder.suggest("*");
         for (PendingRequest pending : pendingForTarget(target.getUUID())) {
             builder.suggest(pending.requesterName());
         }
