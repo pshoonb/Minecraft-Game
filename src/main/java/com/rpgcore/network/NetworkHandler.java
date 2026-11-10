@@ -33,7 +33,7 @@ public final class NetworkHandler {
     private static void handleAllocate(AllocateAttributePayload payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) return;
         PlayerAttribute attribute = PlayerAttribute.byNetworkId(payload.attributeId());
-        RpgProgressionService.allocateAttribute(player, attribute, payload.amount());
+        RpgProgressionService.changeAttribute(player, attribute, payload.amount());
     }
 
     private static void handleReset(ResetAttributesPayload payload, IPayloadContext context) {
