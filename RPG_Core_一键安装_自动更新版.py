@@ -536,7 +536,7 @@ function Show-UpdateError {
 }
 
 try {
-    $logDirectory = Split-Path -LiteralPath $LogPath -Parent
+    $logDirectory = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($LogPath))
     New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
     Set-Content -LiteralPath $LogPath -Value 'RPG Core installer update started.' -Encoding UTF8
     Write-UpdateLog "Waiting for old installer process PID $ParentPid to exit."
@@ -574,7 +574,7 @@ try {
             throw 'The installed executable failed its SHA-256 verification.'
         }
 
-        $workingDirectory = Split-Path -LiteralPath $CurrentExe -Parent
+        $workingDirectory = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($CurrentExe))
         Write-UpdateLog 'Starting the updated installer.'
         $newProcess = Start-Process -FilePath $CurrentExe -WorkingDirectory $workingDirectory -PassThru
         Start-Sleep -Seconds 5
@@ -605,6 +605,15 @@ try {
     }
 }
 catch {
+    # A failed handoff must not leave an extra staged EXE beside the real installer.
+    if (Test-Path -LiteralPath $StagedExe -PathType Leaf) {
+        try {
+            Remove-Item -LiteralPath $StagedExe -Force -ErrorAction Stop
+        }
+        catch {
+            # Keep the original updater error as the primary diagnostic.
+        }
+    }
     $details = ($_ | Out-String).Trim()
     try {
         Write-UpdateLog ('ERROR: ' + $details)
@@ -699,7 +708,7 @@ def check_frozen_installer_update():
             "The new EXE will be downloaded and checked with SHA-256 before replacing this file.\n"
             "After the EXE update, it will restart and then check for the latest RPG Core JAR.\n\n"
             "Select “Yes” to update the installer EXE now.\n"
-            "Select “No” to skip only the EXE update and continue to the JAR installation step."
+            "Select “No” or close this dialog (X) to skip only the EXE update and continue to the JAR installation step."
         )
 
         if not should_update:
