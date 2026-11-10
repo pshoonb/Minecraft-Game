@@ -1,12 +1,17 @@
 package com.rpgcore.network;
 
 import com.rpgcore.client.ClientRpgDataCache;
+import com.rpgcore.client.ClientTeleportTargetsCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public final class ClientPayloadHandler {
     private ClientPayloadHandler() {
+    }
+
+    public static void handleTeleportTargets(TeleportTargetsPayload payload, IPayloadContext context) {
+        ClientTeleportTargetsCache.update(payload.targets());
     }
 
     public static void handleSync(SyncRpgDataPayload payload, IPayloadContext context) {

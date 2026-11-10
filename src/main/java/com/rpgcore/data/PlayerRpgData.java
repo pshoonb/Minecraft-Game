@@ -19,10 +19,11 @@ public record PlayerRpgData(
         long luck,
         long experienceLoot,
         long waterBreathing,
-        boolean progressionInitialized
+        boolean progressionInitialized,
+        boolean teleportUnlocked
 ) {
     public static final PlayerRpgData EMPTY =
-            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, false);
+            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, false, false);
 
     public static final Codec<PlayerRpgData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.optionalFieldOf("rpg_level", 0).forGetter(PlayerRpgData::rpgLevel),
@@ -36,7 +37,8 @@ public record PlayerRpgData(
             Codec.LONG.optionalFieldOf("luck", 0L).forGetter(PlayerRpgData::luck),
             Codec.LONG.optionalFieldOf("experience_loot", 0L).forGetter(PlayerRpgData::experienceLoot),
             Codec.LONG.optionalFieldOf("water_breathing", 0L).forGetter(PlayerRpgData::waterBreathing),
-            Codec.BOOL.optionalFieldOf("progression_initialized", false).forGetter(PlayerRpgData::progressionInitialized)
+            Codec.BOOL.optionalFieldOf("progression_initialized", false).forGetter(PlayerRpgData::progressionInitialized),
+            Codec.BOOL.optionalFieldOf("teleport_unlocked", false).forGetter(PlayerRpgData::teleportUnlocked)
     ).apply(instance, PlayerRpgData::new));
 
     public static final StreamCodec<ByteBuf, PlayerRpgData> STREAM_CODEC = StreamCodec.of(
@@ -66,7 +68,7 @@ public record PlayerRpgData(
         int previousBaseline = Math.max(rpgLevel, highestLevelReached);
         return new PlayerRpgData(safeLevel, Math.max(previousBaseline, safeLevel),
                 strength, defense, health, miningSpeed, speed, jumpHeight, luck,
-                experienceLoot, waterBreathing, true);
+                experienceLoot, waterBreathing, true, teleportUnlocked);
     }
 
     public PlayerRpgData withVanillaLevel(int vanillaLevel) {
@@ -94,7 +96,18 @@ public record PlayerRpgData(
     }
 
     public long availableAttributePoints() {
-        return Math.max(0L, totalAttributePoints() - allocatedAttributePoints());
+        long purchaseCost = teleportUnlocked ? TELEPORT_UNLOCK_COST : 0L;
+        return Math.max(0L, totalAttributePoints() - allocatedAttributePoints() - purchaseCost);
+    }
+
+    public static final long TELEPORT_UNLOCK_COST = 10_000L;
+
+    /** Permanently unlocks teleport; the cost is reflected in availableAttributePoints(). */
+    public PlayerRpgData withTeleportUnlocked() {
+        if (teleportUnlocked) return this;
+        return new PlayerRpgData(rpgLevel, highestLevelReached, strength, defense, health,
+                miningSpeed, speed, jumpHeight, luck, experienceLoot, waterBreathing,
+                progressionInitialized, true);
     }
 
     public long valueOf(PlayerAttribute attribute) {
@@ -146,7 +159,7 @@ public record PlayerRpgData(
             long s, long d, long h, long m, long sp, long j, long l,
             long expLoot, long waterBreathing) {
         return new PlayerRpgData(rpgLevel, highestLevelReached,
-                s, d, h, m, sp, j, l, expLoot, waterBreathing, progressionInitialized);
+                s, d, h, m, sp, j, l, expLoot, waterBreathing, progressionInitialized, teleportUnlocked);
     }
 
     private static long nonNegative(long value) { return Math.max(0L, value); }
@@ -168,12 +181,13 @@ public record PlayerRpgData(
         b.writeLong(d.experienceLoot);
         b.writeLong(d.waterBreathing);
         b.writeBoolean(d.progressionInitialized);
+        b.writeBoolean(d.teleportUnlocked);
     }
 
     private static PlayerRpgData readFromBuffer(ByteBuf b) {
         return new PlayerRpgData(b.readInt(), b.readInt(),
                 b.readLong(), b.readLong(), b.readLong(), b.readLong(),
                 b.readLong(), b.readLong(), b.readLong(), b.readLong(), b.readLong(),
-                b.readBoolean());
+                b.readBoolean(), b.readBoolean());
     }
 }

@@ -5,6 +5,7 @@ import com.rpgcore.attributes.AttributeFormulaCalculator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
@@ -32,7 +33,10 @@ public final class ClientForgeEvents {
             return;
         }
 
-        int x = (screen.width - BUTTON_WIDTH) / 2;
+        boolean teleportUnlocked = ClientRpgDataCache.hasServerData()
+                && ClientRpgDataCache.get().teleportUnlocked();
+        int groupWidth = BUTTON_WIDTH + (teleportUnlocked ? 5 + 58 : 0);
+        int x = (screen.width - groupWidth) / 2;
         int y = (screen.height + INVENTORY_IMAGE_HEIGHT) / 2 + 4;
 
         Button openPanelButton = Button.builder(
@@ -41,6 +45,16 @@ public final class ClientForgeEvents {
         ).bounds(x, y, BUTTON_WIDTH, BUTTON_HEIGHT).build();
 
         event.addListener(openPanelButton);
+
+        if (teleportUnlocked) {
+            Button teleportButton = Button.builder(
+                    Component.translatable("button.rpgcore.open_teleport"),
+                    button -> Minecraft.getInstance().setScreen(new PlayerTeleportScreen(screen))
+            ).bounds(x + BUTTON_WIDTH + 5, y, 58, BUTTON_HEIGHT)
+                    .tooltip(Tooltip.create(Component.translatable("button.rpgcore.open_teleport.tooltip")))
+                    .build();
+            event.addListener(teleportButton);
+        }
     }
     /**
      * Mirrors the server-side mining bonus in the local player's dig-speed

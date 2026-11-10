@@ -6,9 +6,11 @@ import com.rpgcore.data.PlayerRpgData;
 import com.rpgcore.network.AllocateAttributePayload;
 import com.rpgcore.network.RequestRpgDataPayload;
 import com.rpgcore.network.ResetAttributesPayload;
+import com.rpgcore.network.UnlockTeleportPayload;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -45,6 +47,7 @@ public final class RpgDataScreen extends Screen {
     private StringWidget waitingLabel;
     private Button resetButton;
     private Button backButton;
+    private Button teleportUnlockButton;
     private PlayerRpgData lastDisplayedData;
 
     private int contentMargin;
@@ -103,11 +106,26 @@ public final class RpgDataScreen extends Screen {
                 width - 2 * contentMargin - 8,
                 Component.translatable("screen.rpgcore.subtitle"), 0xFFD5CBBB, true));
 
-        int infoSplit = Math.min(190, Math.max(120, width / 3));
-        levelLabel = addText(contentMargin + 8, infoY, infoSplit - 8,
+        boolean narrowHeader = width < 560;
+        if (narrowHeader) headerBottom += 13;
+        int infoSplit = narrowHeader ? width - 2 * contentMargin
+                : Math.min(360, Math.max(240, width / 2));
+        int levelWidth = narrowHeader ? 108 : 125;
+        levelLabel = addText(contentMargin + 8, infoY, levelWidth,
                 Component.translatable("screen.rpgcore.level", "..."), 0xFFF0E9DC, false);
-        pointsLabel = addText(contentMargin + infoSplit, infoY,
-                Math.max(1, width - 2 * contentMargin - infoSplit),
+
+        int unlockButtonX = contentMargin + 8 + levelWidth + 5;
+        int unlockButtonWidth = narrowHeader ? 112 : Math.max(110, infoSplit - levelWidth - 18);
+        teleportUnlockButton = addRenderableWidget(Button.builder(
+                Component.translatable("screen.rpgcore.teleport.locked"),
+                button -> PacketDistributor.sendToServer(new UnlockTeleportPayload()))
+                .bounds(unlockButtonX, infoY - 4, unlockButtonWidth, 18)
+                .tooltip(Tooltip.create(Component.translatable("screen.rpgcore.teleport.require_level")))
+                .build());
+
+        pointsLabel = addText(narrowHeader ? contentMargin + 8 : contentMargin + infoSplit,
+                narrowHeader ? infoY + 13 : infoY,
+                Math.max(1, width - 2 * contentMargin - (narrowHeader ? 16 : infoSplit)),
                 Component.translatable("screen.rpgcore.points", "...", "..."),
                 0xFFFFD778, false);
         waitingLabel = addText(contentMargin + 8, infoY,
@@ -236,6 +254,30 @@ public final class RpgDataScreen extends Screen {
         widget.visible = y + widgetHeight > viewportTop && y < viewportBottom;
     }
 
+    private void updateTeleportUnlockButton(PlayerRpgData data) {
+        if (data.teleportUnlocked()) {
+            teleportUnlockButton.setMessage(Component.translatable("screen.rpgcore.teleport.unlocked"));
+            teleportUnlockButton.active = false;
+            teleportUnlockButton.setTooltip(Tooltip.create(
+                    Component.translatable("screen.rpgcore.teleport.unlocked_tooltip")));
+        } else if (data.highestLevelReached() < 30) {
+            teleportUnlockButton.setMessage(Component.translatable("screen.rpgcore.teleport.locked"));
+            teleportUnlockButton.active = false;
+            teleportUnlockButton.setTooltip(Tooltip.create(
+                    Component.translatable("screen.rpgcore.teleport.require_level")));
+        } else if (data.availableAttributePoints() < PlayerRpgData.TELEPORT_UNLOCK_COST) {
+            teleportUnlockButton.setMessage(Component.translatable("screen.rpgcore.teleport.unlock"));
+            teleportUnlockButton.active = false;
+            teleportUnlockButton.setTooltip(Tooltip.create(Component.translatable(
+                    "screen.rpgcore.teleport.need_points", data.availableAttributePoints())));
+        } else {
+            teleportUnlockButton.setMessage(Component.translatable("screen.rpgcore.teleport.unlock"));
+            teleportUnlockButton.active = true;
+            teleportUnlockButton.setTooltip(Tooltip.create(Component.translatable(
+                    "screen.rpgcore.teleport.unlock_cost")));
+        }
+    }
+
     private void updateAttributeRows(PlayerRpgData data) {
         if (data.equals(lastDisplayedData)) {
             return;
@@ -339,8 +381,10 @@ public final class RpgDataScreen extends Screen {
         waitingLabel.visible = !hasData;
         levelLabel.visible = hasData;
         pointsLabel.visible = hasData;
+        teleportUnlockButton.visible = hasData;
         if (hasData) {
             PlayerRpgData data = ClientRpgDataCache.get();
+            updateTeleportUnlockButton(data);
             levelLabel.setMessage(Component.translatable("screen.rpgcore.level", data.rpgLevel()));
             pointsLabel.setMessage(Component.translatable("screen.rpgcore.points",
                     data.availableAttributePoints(), data.totalAttributePoints()));
@@ -354,8 +398,10 @@ public final class RpgDataScreen extends Screen {
         }
         boolean resetVisible = resetButton.visible;
         boolean backVisible = backButton.visible;
+        boolean unlockVisible = teleportUnlockButton.visible;
         resetButton.visible = false;
         backButton.visible = false;
+        teleportUnlockButton.visible = false;
 
         graphics.enableScissor(viewportLeft, viewportTop, viewportRight, viewportBottom);
         for (int i = 0; i < ATTRIBUTES.length; i++) {
@@ -379,12 +425,14 @@ public final class RpgDataScreen extends Screen {
         }
         resetButton.visible = resetVisible;
         backButton.visible = backVisible;
+        teleportUnlockButton.visible = unlockVisible;
         if (resetVisible) {
             resetButton.render(graphics, mouseX, mouseY, partialTick);
         }
         if (backVisible) {
             backButton.render(graphics, mouseX, mouseY, partialTick);
         }
+        if (unlockVisible) teleportUnlockButton.render(graphics, mouseX, mouseY, partialTick);
 
         if (maxScroll > 0) {
             int trackX = panelRight - 3;

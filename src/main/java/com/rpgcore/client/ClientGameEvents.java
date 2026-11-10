@@ -1,6 +1,7 @@
 package com.rpgcore.client;
 
 import com.rpgcore.RpgCoreMod;
+import com.rpgcore.client.ClientTeleportTargetsCache;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -15,5 +16,6 @@ public final class ClientGameEvents {
     @SubscribeEvent
     public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientRpgDataCache.clear();
+        ClientTeleportTargetsCache.clear();
     }
 }

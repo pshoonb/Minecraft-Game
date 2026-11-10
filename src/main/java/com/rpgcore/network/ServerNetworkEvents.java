@@ -24,5 +24,12 @@ public final class ServerNetworkEvents {
                     // A dedicated server only sends this payload; it never receives it.
                 }
         );
+        event.registrar("1").playToClient(
+                TeleportTargetsPayload.TYPE,
+                TeleportTargetsPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    // A dedicated server only sends this payload; it never receives it.
+                }
+        );
     }
 }
