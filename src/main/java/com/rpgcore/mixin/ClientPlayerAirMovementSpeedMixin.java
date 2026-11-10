@@ -4,17 +4,15 @@ import com.rpgcore.attributes.AttributeFormulaCalculator;
 import com.rpgcore.client.ClientRpgDataCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Applies the same airborne Speed calculation to the local player's prediction. */
-@Mixin(value = LivingEntity.class, remap = false)
+/** Applies the same Speed percentage to the local player's predicted air steering. */
+@Mixin(value = Player.class, remap = false)
 public abstract class ClientPlayerAirMovementSpeedMixin {
-    private static final double SPRINT_MOVEMENT_MULTIPLIER = 1.3;
-
     @Inject(
             method = "getFlyingSpeed",
             at = @At("RETURN"),
@@ -34,9 +32,9 @@ public abstract class ClientPlayerAirMovementSpeedMixin {
             return;
         }
 
-        double sprintMultiplier = player.isSprinting() ? SPRINT_MOVEMENT_MULTIPLIER : 1.0;
-        double adjustedSpeed = callback.getReturnValue() * sprintMultiplier
-                * (1.0 + bonusPercent / 100.0);
+        // Vanilla already changes the base air-control value while sprinting.
+        // Applying the same RPG percentage as on the server keeps prediction aligned.
+        double adjustedSpeed = callback.getReturnValue() * (1.0 + bonusPercent / 100.0);
         if (Double.isFinite(adjustedSpeed) && adjustedSpeed > 0.0) {
             callback.setReturnValue((float) Math.min(adjustedSpeed, Float.MAX_VALUE));
         }

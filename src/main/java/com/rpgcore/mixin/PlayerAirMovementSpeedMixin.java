@@ -3,21 +3,21 @@ package com.rpgcore.mixin;
 import com.rpgcore.attributes.AttributeFormulaCalculator;
 import com.rpgcore.data.ModAttachments;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Applies the player's Speed attribute at the vanilla airborne acceleration
- * calculation point, using the current movement state rather than tick-pre
- * input fields from the preceding tick.
+ * Applies the Speed attribute to the actual player airborne steering value.
+ *
+ * <p>Player overrides LivingEntity#getFlyingSpeed, so the mixin must target
+ * Player rather than LivingEntity. The vanilla return value already accounts
+ * for sprinting; only the RPG percentage is applied here.</p>
  */
-@Mixin(value = LivingEntity.class, remap = false)
+@Mixin(value = Player.class, remap = false)
 public abstract class PlayerAirMovementSpeedMixin {
-    private static final double SPRINT_MOVEMENT_MULTIPLIER = 1.3;
-
     @Inject(
             method = "getFlyingSpeed",
             at = @At("RETURN"),
@@ -35,9 +35,9 @@ public abstract class PlayerAirMovementSpeedMixin {
             return;
         }
 
-        double sprintMultiplier = player.isSprinting() ? SPRINT_MOVEMENT_MULTIPLIER : 1.0;
-        double adjustedSpeed = callback.getReturnValue() * sprintMultiplier
-                * (1.0 + bonusPercent / 100.0);
+        // Do not add another sprint multiplier: Player#getFlyingSpeed already
+        // returns the sprint-adjusted vanilla air-control value.
+        double adjustedSpeed = callback.getReturnValue() * (1.0 + bonusPercent / 100.0);
         if (Double.isFinite(adjustedSpeed) && adjustedSpeed > 0.0) {
             callback.setReturnValue((float) Math.min(adjustedSpeed, Float.MAX_VALUE));
         }
