@@ -75,7 +75,7 @@ public record PlayerRpgData(
         int safeLevel = clampLevel(vanillaLevel);
         return new PlayerRpgData(safeLevel, Math.max(highestLevelReached, safeLevel),
                 strength, defense, health, miningSpeed, speed, jumpHeight, luck,
-                experienceLoot, waterBreathing, true);
+                experienceLoot, waterBreathing, true, teleportUnlocked);
     }
 
     public long allocatedAttributePoints() {
