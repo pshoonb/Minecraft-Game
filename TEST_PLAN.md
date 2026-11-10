@@ -81,6 +81,8 @@
 - [ ] Health changes max health and handles current health correctly.
 - [ ] Mining Speed affects both client-side dig progress and server-side block breaking without client/server desynchronization.
 - [ ] Movement Speed works on land and in water, while sneaking, sprinting, flying and riding.
+- [ ] Jump Height uses the marginal formula `0.01 + 0.49 * exp(-0.03 * x)` blocks per allocated point, cumulatively summed from x=1 through the allocated point count.
+- [ ] Jump Height reference totals are approximately 0.49 blocks at 1 point, 2.29 at 5 points, 4.27 at 10 points, and 9.85 at 30 points.
 - [ ] Jump Height works with the vanilla Jump Boost effect.
 - [ ] Luck's ore, chance-predicate, weighted-pool and deterministic-entry behavior produces no unintended duplicate rewards.
 
