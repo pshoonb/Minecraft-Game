@@ -60,7 +60,10 @@ public final class NetworkHandler {
     }
 
     private static void handleRequestTeleportTargets(RequestTeleportTargetsPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) sendTeleportTargets(player);
+        if (context.player() instanceof ServerPlayer player) {
+            sendTeleportTargets(player);
+            TeleportRequestManager.sendIncomingRequests(player);
+        }
     }
 
     private static void handleTeleportToPlayer(TeleportToPlayerPayload payload, IPayloadContext context) {
