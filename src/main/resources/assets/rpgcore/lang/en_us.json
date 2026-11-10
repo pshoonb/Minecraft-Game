@@ -65,5 +65,11 @@
   "message.rpgcore.teleport.request_expired_target": "The teleport request from %s has expired.",
   "message.rpgcore.teleport.target_went_offline": "Player %s went offline. Teleport request failed.",
   "message.rpgcore.teleport.requester_went_offline": "The requesting player %s went offline. Request cancelled.",
-  "message.rpgcore.teleport.requester_cancelled_other": "Player %s completed another teleport. This request was cancelled."
+  "message.rpgcore.teleport.requester_cancelled_other": "Player %s completed another teleport. This request was cancelled.",
+  "screen.rpgcore.teleport.tab_send": "Send Requests",
+  "screen.rpgcore.teleport.tab_received": "Incoming Requests",
+  "screen.rpgcore.teleport.incoming_count": "Pending requests: %s",
+  "screen.rpgcore.teleport.incoming_empty": "No one has sent you a teleport request.",
+  "screen.rpgcore.teleport.accept": "Accept",
+  "screen.rpgcore.teleport.deny": "Deny"
 }
