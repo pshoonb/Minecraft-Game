@@ -4,6 +4,7 @@ import com.rpgcore.RpgCoreMod;
 import com.rpgcore.network.ClientPayloadHandler;
 import com.rpgcore.network.SyncRpgDataPayload;
 import com.rpgcore.network.TeleportTargetsPayload;
+import com.rpgcore.network.TeleportIncomingRequestsPayload;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,6 +21,11 @@ public final class ClientNetworkEvents {
                 SyncRpgDataPayload.TYPE,
                 SyncRpgDataPayload.STREAM_CODEC,
                 ClientPayloadHandler::handleSync
+        );
+        event.registrar("1").playToClient(
+                TeleportIncomingRequestsPayload.TYPE,
+                TeleportIncomingRequestsPayload.STREAM_CODEC,
+                ClientPayloadHandler::handleIncomingRequests
         );
         event.registrar("1").playToClient(
                 TeleportTargetsPayload.TYPE,
