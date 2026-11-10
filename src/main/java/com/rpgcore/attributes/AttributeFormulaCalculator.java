@@ -54,10 +54,13 @@ public final class AttributeFormulaCalculator {
         return miningFormulaSum(points);
     }
 
-    /** Jump height: cumulative fixed height gain, measured in blocks. */
+    /**
+     * Jump height: each allocated point adds 0.01 + 0.49 * exp(-0.03 * x)
+     * blocks, summed from x=1 through the allocated point count.
+     */
     public static double jumpHeightBlocks(long points) {
         return cumulative(points, x ->
-                1.0 / Math.log(0.5 * x + Math.E - 0.5));
+                0.01 + 0.49 * Math.exp(-0.03 * x));
     }
 
     /** Luck reuses the mining-speed percentage formula for mob equipment chances. */
