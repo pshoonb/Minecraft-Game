@@ -42,11 +42,12 @@ public final class AttributeFormulaCalculator {
     }
 
     /**
-     * Strength: sum(2 / x) = 2 * H_points, where H_n is the nth harmonic
-     * number. The harmonic number is evaluated in bounded time.
+     * Strength: cumulative flat-damage gain from
+     * 0.001 + 0.099 / (1 + e^(0.12 * (x - 50))) per allocated point.
      */
     public static double strengthDamage(long points) {
-        return points <= 0L ? 0.0 : 2.0 * harmonicNumber(points);
+        return cumulative(points, x ->
+                0.001 + 0.099 / (1.0 + Math.exp(0.12 * (x - 50.0))));
     }
 
     /**
