@@ -9,6 +9,7 @@ import com.rpgcore.network.ResetAttributesPayload;
 import com.rpgcore.network.UnlockTeleportPayload;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -27,15 +28,16 @@ public final class RpgDataScreen extends Screen {
     private static final int SCROLL_PIXELS_PER_NOTCH = 24;
 
     private final Screen parentScreen;
-    private final StringWidget[] nameLabels = new StringWidget[ATTRIBUTES.length];
+    private final MultiLineTextWidget[] nameLabels = new MultiLineTextWidget[ATTRIBUTES.length];
     private final StringWidget[] valueLabels = new StringWidget[ATTRIBUTES.length];
-    private final StringWidget[] effectLabels = new StringWidget[ATTRIBUTES.length];
+    private final MultiLineTextWidget[] effectLabels = new MultiLineTextWidget[ATTRIBUTES.length];
     private final int[] cardXs = new int[ATTRIBUTES.length];
     private final int[] cardBaseYs = new int[ATTRIBUTES.length];
     private final int[] cardYs = new int[ATTRIBUTES.length];
     private final int[] cardWidths = new int[ATTRIBUTES.length];
     private final int[] cardHeights = new int[ATTRIBUTES.length];
     private final int[] nameOffsets = new int[ATTRIBUTES.length];
+    private final int[] valueOffsets = new int[ATTRIBUTES.length];
     private final int[] effectOffsets = new int[ATTRIBUTES.length];
     private final List<Button> attributeButtons = new ArrayList<>();
     private final List<Integer> buttonBaseYs = new ArrayList<>();
@@ -51,6 +53,11 @@ public final class RpgDataScreen extends Screen {
     private PlayerRpgData lastDisplayedData;
 
     private int contentMargin;
+    private int gridColumns;
+    private int gridRows;
+    private int columnGap;
+    private int columnWidth;
+    private boolean compactCards;
     private int headerBottom;
     private int resetButtonY;
     private int panelLeft;
@@ -83,11 +90,14 @@ public final class RpgDataScreen extends Screen {
         boolean compact = height < 260;
         boolean veryCompact = height < 200;
         contentMargin = Math.min(18, Math.max(8, width / 32));
-        int gridColumns = width < 700 && height >= 260 ? 1 : GRID_COLUMNS;
-        int gridRows = (ATTRIBUTES.length + gridColumns - 1) / gridColumns;
-        int columnGap = gridColumns == 1 ? 0 : Math.min(18, Math.max(6, width / 40));
+        // Screen.width/height are already GUI-scaled by Minecraft. Choose the
+        // layout from those values so every player's GUI Scale is respected.
+        gridColumns = width < 700 ? 1 : GRID_COLUMNS;
+        gridRows = (ATTRIBUTES.length + gridColumns - 1) / gridColumns;
+        columnGap = gridColumns == 1 ? 0 : Math.min(18, Math.max(6, width / 40));
         int contentWidth = Math.max(1, width - contentMargin * 2 - columnGap);
-        int columnWidth = contentWidth / gridColumns;
+        columnWidth = contentWidth / gridColumns;
+        compactCards = columnWidth < 350;
 
         panelLeft = contentMargin - 4;
         panelRight = width - contentMargin + 4;
@@ -140,61 +150,55 @@ public final class RpgDataScreen extends Screen {
         viewportTop = headerBottom + 8;
         viewportBottom = Math.max(viewportTop + 1, footerTop - 7);
 
-        int rowHeight = veryCompact ? 40 : compact ? 56 : 84;
-        contentHeight = gridRows * rowHeight + Math.max(0, gridRows - 1) * ROW_GAP;
-        maxScroll = Math.max(0, contentHeight - (viewportBottom - viewportTop));
-        scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
-
+        int buttonHeight = height < 200 ? 12 : 16;
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             PlayerAttribute attribute = ATTRIBUTES[i];
-            int row = i / gridColumns;
             int column = i % gridColumns;
             int cellX = contentMargin + column * (columnWidth + columnGap);
-            int cellY = viewportTop + row * (rowHeight + ROW_GAP);
 
             cardXs[i] = cellX;
-            cardBaseYs[i] = cellY;
             cardWidths[i] = columnWidth;
-            cardHeights[i] = rowHeight;
 
             int buttonWidth = Math.max(24, Math.min(36, (columnWidth - 28) / 5));
             int buttonGap = 2;
             int buttonGroupWidth = buttonWidth * 4 + buttonGap * 3;
-            int buttonLeft = cellX + columnWidth - 7 - buttonGroupWidth;
-            int buttonHeight = Math.max(10, Math.min(16, (rowHeight - 6) / 2));
-            int buttonTopOffset = Math.max(0, (rowHeight - (buttonHeight * 2 + 2)) / 2);
+            int buttonLeft = compactCards
+                    ? cellX + (columnWidth - buttonGroupWidth) / 2
+                    : cellX + columnWidth - 7 - buttonGroupWidth;
 
             int textLeft = cellX + 7;
-            int textWidth = Math.max(1, buttonLeft - textLeft - 8);
-            int valueWidth = Math.min(48, Math.max(30, textWidth / 4));
-            int nameWidth = Math.max(1, textWidth - valueWidth - 5);
-            int firstLineOffset = rowHeight / 2 - 8;
+            int valueWidth = Math.min(52, Math.max(36, columnWidth / 7));
+            int nameWidth = compactCards
+                    ? Math.max(1, columnWidth - 14)
+                    : Math.max(1, buttonLeft - textLeft - 8 - valueWidth - 5);
+            int valueX = compactCards ? textLeft : textLeft + nameWidth + 5;
 
-            nameOffsets[i] = firstLineOffset;
-            effectOffsets[i] = firstLineOffset + 13;
-            nameLabels[i] = addText(textLeft, cellY + nameOffsets[i], nameWidth,
+            nameLabels[i] = addWrappedText(textLeft, 0, nameWidth,
                     Component.translatable("screen.rpgcore.stat." + attribute.serializedName()),
-                    0xFFF0E9DC, false);
-            valueLabels[i] = addText(textLeft + nameWidth + 5, cellY + firstLineOffset,
-                    valueWidth, Component.translatable("screen.rpgcore.stat.points", "0"),
+                    0xFFF0E9DC);
+            valueLabels[i] = addText(valueX, 0, valueWidth,
+                    Component.translatable("screen.rpgcore.stat.points", "0"),
                     0xFFFFD778, false);
-            effectLabels[i] = addText(textLeft, cellY + effectOffsets[i], textWidth,
-                    Component.translatable("screen.rpgcore.effect." + attribute.serializedName()),
-                    0xFFB8B0A2, false);
+
+            Component effectPlaceholder = attribute == PlayerAttribute.WATER_BREATHING
+                    ? Component.translatable("screen.rpgcore.effect.water_breathing", "0", "0")
+                    : Component.translatable("screen.rpgcore.effect." + attribute.serializedName(), "0");
+            effectLabels[i] = addWrappedText(cellX + 7, 0,
+                    Math.max(1, columnWidth - 14), effectPlaceholder, 0xFFB8B0A2);
 
             int[] adjustmentAmounts = {1, 10, 50, 100, -1, -10, -50, -100};
             for (int buttonIndex = 0; buttonIndex < adjustmentAmounts.length; buttonIndex++) {
                 int amount = adjustmentAmounts[buttonIndex];
                 int buttonX = buttonLeft + (buttonIndex % 4) * (buttonWidth + buttonGap);
-                int buttonY = cellY + buttonTopOffset + (buttonIndex / 4) * (buttonHeight + 2);
+                int buttonYOffset = (buttonIndex / 4) * (buttonHeight + 2);
                 String label = amount > 0 ? "+" + amount : Integer.toString(amount);
 
                 Button button = addRenderableWidget(Button.builder(Component.literal(label),
                         widget -> PacketDistributor.sendToServer(
                                 new AllocateAttributePayload(attribute.networkId(), amount)))
-                        .bounds(buttonX, buttonY, buttonWidth, buttonHeight).build());
+                        .bounds(buttonX, 0, buttonWidth, buttonHeight).build());
                 attributeButtons.add(button);
-                buttonBaseYs.add(buttonY);
+                buttonBaseYs.add(buttonYOffset);
                 buttonHeights.add(buttonHeight);
             }
         }
@@ -210,7 +214,7 @@ public final class RpgDataScreen extends Screen {
                 button -> onClose())
                 .bounds(footerLeft + resetWidth + 10, resetButtonY, backWidth, 18).build());
 
-        updateScrollContentPositions();
+        recalculateCardLayout();
         PacketDistributor.sendToServer(new RequestRpgDataPayload());
     }
 
@@ -225,33 +229,94 @@ public final class RpgDataScreen extends Screen {
         return addRenderableOnly(widget);
     }
 
+    private MultiLineTextWidget addWrappedText(int x, int y, int widgetWidth,
+                                               Component message, int color) {
+        MultiLineTextWidget widget = new MultiLineTextWidget(x, y, message, font)
+                .setMaxWidth(Math.max(1, widgetWidth))
+                .setColor(color);
+        return addRenderableOnly(widget);
+    }
+
     private static String fmt(double value) {
         return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    /**
+     * Measures wrapped text and rebuilds card rows using the scaled GUI width.
+     * Each row is as tall as its tallest card, so wrapped descriptions never
+     * overlap another attribute or the allocation controls.
+     */
+    private void recalculateCardLayout() {
+        int y = viewportTop;
+        for (int row = 0; row < gridRows; row++) {
+            int first = row * gridColumns;
+            int last = Math.min(ATTRIBUTES.length, first + gridColumns);
+            int rowHeight = 0;
+
+            for (int i = first; i < last; i++) {
+                int titleHeight = Math.max(10, nameLabels[i].getHeight());
+                int buttonHeight = buttonHeights.get(i * 8);
+                nameOffsets[i] = 5;
+
+                int buttonTop;
+                if (compactCards) {
+                    valueOffsets[i] = nameOffsets[i] + titleHeight + 2;
+                    buttonTop = valueOffsets[i] + 12 + 4;
+                    effectOffsets[i] = buttonTop + buttonHeight * 2 + 2 + 5;
+                } else {
+                    valueOffsets[i] = nameOffsets[i];
+                    buttonTop = 4;
+                    effectOffsets[i] = Math.max(40, nameOffsets[i] + titleHeight + 5);
+                }
+
+                for (int buttonIndex = 0; buttonIndex < 8; buttonIndex++) {
+                    int buttonOffset = buttonTop + (buttonIndex / 4) * (buttonHeight + 2);
+                    buttonBaseYs.set(i * 8 + buttonIndex, buttonOffset);
+                }
+
+                int effectHeight = Math.max(10, effectLabels[i].getHeight());
+                rowHeight = Math.max(rowHeight, effectOffsets[i] + effectHeight + 8);
+            }
+
+            for (int i = first; i < last; i++) {
+                cardBaseYs[i] = y;
+                cardHeights[i] = rowHeight;
+            }
+            y += rowHeight + ROW_GAP;
+        }
+
+        contentHeight = Math.max(0, y - viewportTop - (gridRows > 0 ? ROW_GAP : 0));
+        maxScroll = Math.max(0, contentHeight - (viewportBottom - viewportTop));
+        scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
+        updateScrollContentPositions();
     }
 
     private void updateScrollContentPositions() {
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             cardYs[i] = cardBaseYs[i] - scrollOffset;
-            nameLabels[i].setY(cardBaseYs[i] + nameOffsets[i] - scrollOffset);
-            valueLabels[i].setY(cardBaseYs[i] + nameOffsets[i] - scrollOffset);
-            effectLabels[i].setY(cardBaseYs[i] + effectOffsets[i] - scrollOffset);
 
-            setWidgetVisibleInViewport(nameLabels[i], nameLabels[i].getY(), 10);
-            setWidgetVisibleInViewport(valueLabels[i], valueLabels[i].getY(), 10);
-            setWidgetVisibleInViewport(effectLabels[i], effectLabels[i].getY(), 10);
+            int nameY = cardBaseYs[i] + nameOffsets[i] - scrollOffset;
+            int valueY = cardBaseYs[i] + valueOffsets[i] - scrollOffset;
+            int effectY = cardBaseYs[i] + effectOffsets[i] - scrollOffset;
+            nameLabels[i].setY(nameY);
+            valueLabels[i].setY(valueY);
+            effectLabels[i].setY(effectY);
+
+            nameLabels[i].visible = nameY + nameLabels[i].getHeight() > viewportTop
+                    && nameY < viewportBottom;
+            valueLabels[i].visible = valueY + 10 > viewportTop && valueY < viewportBottom;
+            effectLabels[i].visible = effectY + effectLabels[i].getHeight() > viewportTop
+                    && effectY < viewportBottom;
         }
 
         for (int i = 0; i < attributeButtons.size(); i++) {
             Button button = attributeButtons.get(i);
-            int y = buttonBaseYs.get(i) - scrollOffset;
+            int attributeIndex = i / 8;
+            int y = cardBaseYs[attributeIndex] + buttonBaseYs.get(i) - scrollOffset;
             button.setY(y);
             int buttonHeight = buttonHeights.get(i);
             button.visible = y + buttonHeight > viewportTop && y < viewportBottom;
         }
-    }
-
-    private void setWidgetVisibleInViewport(StringWidget widget, int y, int widgetHeight) {
-        widget.visible = y + widgetHeight > viewportTop && y < viewportBottom;
     }
 
     private void updateTeleportUnlockButton(PlayerRpgData data) {
@@ -387,6 +452,7 @@ public final class RpgDataScreen extends Screen {
                     data.availableAttributePoints(), data.totalAttributePoints()));
             updateAttributeRows(data);
         }
+        recalculateCardLayout();
 
         boolean[] fixedVisibility = new boolean[fixedTextWidgets.size()];
         for (int i = 0; i < fixedTextWidgets.size(); i++) {
