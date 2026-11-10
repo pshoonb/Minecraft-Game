@@ -25,6 +25,11 @@ public final class ServerNetworkEvents {
                 }
         );
         event.registrar("1").playToClient(
+                TeleportIncomingRequestsPayload.TYPE,
+                TeleportIncomingRequestsPayload.STREAM_CODEC,
+                (payload, context) -> { }
+        );
+        event.registrar("1").playToClient(
                 TeleportTargetsPayload.TYPE,
                 TeleportTargetsPayload.STREAM_CODEC,
                 (payload, context) -> {
