@@ -333,6 +333,7 @@ public final class TeleportRequestManager {
     private static int denyPending(
             ServerPlayer target, UUID requesterId, MinecraftServer server) {
         PendingRequest pending = removePending(target.getUUID(), requesterId);
+        sendIncomingRequests(target);
         if (pending == null) {
             return 0;
         }
@@ -499,6 +500,7 @@ public final class TeleportRequestManager {
                 ServerPlayer otherTarget =
                         server.getPlayerList().getPlayer(targetEntry.getKey());
                 if (otherTarget != null) {
+                    sendIncomingRequests(otherTarget);
                     otherTarget.sendSystemMessage(Component.translatable(
                             "message.rpgcore.teleport.requester_cancelled_other",
                             cancelled.requesterName()));
