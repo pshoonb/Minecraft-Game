@@ -19,7 +19,8 @@ public final class PlayerTeleportScreen extends Screen {
     private UUID selectedPlayerId;
     private Button confirmButton;
     private Button backButton;
-    private int panelLeft, panelRight, listLeft, listRight, listTop, listBottom;
+    private int panelLeft, panelRight, panelTop, panelBottom;
+    private int listLeft, listRight, listTop, listBottom;
     private int footerY, scrollOffset, maxScroll;
 
     public PlayerTeleportScreen(Screen parentScreen) {
@@ -36,11 +37,10 @@ public final class PlayerTeleportScreen extends Screen {
         panelRight = panelLeft + panelWidth;
         listLeft = panelLeft + 10;
         listRight = panelRight - 10;
-        footerY = height - 30;
-        listTop = 52;
-        listBottom = Math.max(listTop + 1, footerY - 38);
         maxScroll = 0;
 
+        ClientTeleportTargetsCache.clear();
+        updateLayout(0);
         int buttonsLeft = (width - 212) / 2;
         confirmButton = addRenderableWidget(Button.builder(
                 Component.translatable("screen.rpgcore.teleport.confirm"),
@@ -52,8 +52,23 @@ public final class PlayerTeleportScreen extends Screen {
                 button -> onClose())
                 .bounds(buttonsLeft + 132, footerY, 80, 20).build());
 
-        ClientTeleportTargetsCache.clear();
         PacketDistributor.sendToServer(new RequestTeleportTargetsPayload());
+    }
+
+    private void updateLayout(int targetCount) {
+        int maxPanelHeight = Math.max(140, height - 24);
+        int maxListHeight = Math.max(ROW_HEIGHT, Math.min(240, maxPanelHeight - 124));
+        int desiredListHeight = Math.max(ROW_HEIGHT * 2, targetCount * ROW_HEIGHT);
+        int listHeight = Math.min(maxListHeight, desiredListHeight);
+
+        int panelHeight = 124 + listHeight;
+        panelTop = Math.max(12, (height - panelHeight) / 2);
+        panelBottom = panelTop + panelHeight;
+        listTop = panelTop + 58;
+        listBottom = listTop + listHeight;
+        footerY = listBottom + 34;
+        confirmButton.setY(footerY);
+        backButton.setY(footerY);
     }
 
     private void confirmTeleport() {
@@ -66,14 +81,16 @@ public final class PlayerTeleportScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, width, height, 0xFF0D0E10);
         graphics.fill(0, 0, width, 3, 0xFFE0B45C);
-        graphics.fill(panelLeft, 12, panelRight, height - 12, 0xFF171819);
-        graphics.fill(panelLeft, 12, panelRight, 13, 0xFF5A4931);
-        graphics.drawCenteredString(font, title, width / 2, 20, 0xFFFFD778);
+        List<TeleportTargetsPayload.Target> targets = ClientTeleportTargetsCache.get();
+        updateLayout(targets.size());
+
+        graphics.fill(panelLeft, panelTop, panelRight, panelBottom, 0xFF171819);
+        graphics.fill(panelLeft, panelTop, panelRight, panelTop + 1, 0xFF5A4931);
+        graphics.drawCenteredString(font, title, width / 2, panelTop + 9, 0xFFFFD778);
         graphics.drawCenteredString(font,
                 Component.translatable("screen.rpgcore.teleport.subtitle"),
-                width / 2, 34, 0xFFD5CBBB);
+                width / 2, panelTop + 25, 0xFFD5CBBB);
 
-        List<TeleportTargetsPayload.Target> targets = ClientTeleportTargetsCache.get();
         maxScroll = Math.max(0, targets.size() * ROW_HEIGHT - (listBottom - listTop));
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
         graphics.fill(listLeft, listTop - 2, listRight, listBottom + 2, 0xFF101112);
