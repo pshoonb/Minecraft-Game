@@ -65,5 +65,11 @@
   "message.rpgcore.teleport.request_expired_target": "来自玩家 %s 的传送请求已超时。",
   "message.rpgcore.teleport.target_went_offline": "玩家 %s 已离线，传送请求失败。",
   "message.rpgcore.teleport.requester_went_offline": "发送传送请求的玩家 %s 已离线，请求已取消。",
-  "message.rpgcore.teleport.requester_cancelled_other": "玩家 %s 已完成其他传送，请求已自动取消。"
+  "message.rpgcore.teleport.requester_cancelled_other": "玩家 %s 已完成其他传送，请求已自动取消。",
+  "screen.rpgcore.teleport.tab_send": "发送请求",
+  "screen.rpgcore.teleport.tab_received": "收到的请求",
+  "screen.rpgcore.teleport.incoming_count": "待处理请求：%s",
+  "screen.rpgcore.teleport.incoming_empty": "目前没有人向你发送传送请求。",
+  "screen.rpgcore.teleport.accept": "同意",
+  "screen.rpgcore.teleport.deny": "拒绝"
 }
