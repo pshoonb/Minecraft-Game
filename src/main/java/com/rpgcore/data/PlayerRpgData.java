@@ -18,10 +18,11 @@ public record PlayerRpgData(
         long jumpHeight,
         long luck,
         long experienceLoot,
+        long waterBreathing,
         boolean progressionInitialized
 ) {
     public static final PlayerRpgData EMPTY =
-            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, false);
+            new PlayerRpgData(0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, false);
 
     public static final Codec<PlayerRpgData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.optionalFieldOf("rpg_level", 0).forGetter(PlayerRpgData::rpgLevel),
@@ -34,6 +35,7 @@ public record PlayerRpgData(
             Codec.LONG.optionalFieldOf("jump_height", 0L).forGetter(PlayerRpgData::jumpHeight),
             Codec.LONG.optionalFieldOf("luck", 0L).forGetter(PlayerRpgData::luck),
             Codec.LONG.optionalFieldOf("experience_loot", 0L).forGetter(PlayerRpgData::experienceLoot),
+            Codec.LONG.optionalFieldOf("water_breathing", 0L).forGetter(PlayerRpgData::waterBreathing),
             Codec.BOOL.optionalFieldOf("progression_initialized", false).forGetter(PlayerRpgData::progressionInitialized)
     ).apply(instance, PlayerRpgData::new));
 
@@ -52,6 +54,7 @@ public record PlayerRpgData(
         jumpHeight = nonNegative(jumpHeight);
         luck = nonNegative(luck);
         experienceLoot = nonNegative(experienceLoot);
+        waterBreathing = nonNegative(waterBreathing);
     }
 
     private static int clampLevel(int level) {
@@ -63,14 +66,14 @@ public record PlayerRpgData(
         int previousBaseline = Math.max(rpgLevel, highestLevelReached);
         return new PlayerRpgData(safeLevel, Math.max(previousBaseline, safeLevel),
                 strength, defense, health, miningSpeed, speed, jumpHeight, luck,
-                experienceLoot, true);
+                experienceLoot, waterBreathing, true);
     }
 
     public PlayerRpgData withVanillaLevel(int vanillaLevel) {
         int safeLevel = clampLevel(vanillaLevel);
         return new PlayerRpgData(safeLevel, Math.max(highestLevelReached, safeLevel),
                 strength, defense, health, miningSpeed, speed, jumpHeight, luck,
-                experienceLoot, true);
+                experienceLoot, waterBreathing, true);
     }
 
     public long allocatedAttributePoints() {
@@ -82,7 +85,8 @@ public record PlayerRpgData(
         total = saturatedAdd(total, speed);
         total = saturatedAdd(total, jumpHeight);
         total = saturatedAdd(total, luck);
-        return saturatedAdd(total, experienceLoot);
+        total = saturatedAdd(total, experienceLoot);
+        return saturatedAdd(total, waterBreathing);
     }
 
     public long totalAttributePoints() {
@@ -103,6 +107,7 @@ public record PlayerRpgData(
             case JUMP_HEIGHT -> jumpHeight;
             case LUCK -> luck;
             case EXPERIENCE_LOOT -> experienceLoot;
+            case WATER_BREATHING -> waterBreathing;
         };
     }
 
@@ -128,18 +133,20 @@ public record PlayerRpgData(
             case SPEED -> withAttributes(strength, defense, health, miningSpeed, value, jumpHeight, luck, experienceLoot);
             case JUMP_HEIGHT -> withAttributes(strength, defense, health, miningSpeed, speed, value, luck, experienceLoot);
             case LUCK -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, value, experienceLoot);
-            case EXPERIENCE_LOOT -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, value);
+            case EXPERIENCE_LOOT -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, value, waterBreathing);
+            case WATER_BREATHING -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, experienceLoot, value);
         };
     }
 
     public PlayerRpgData resetAttributes() {
-        return withAttributes(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+        return withAttributes(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
     }
 
     private PlayerRpgData withAttributes(
-            long s, long d, long h, long m, long sp, long j, long l, long expLoot) {
+            long s, long d, long h, long m, long sp, long j, long l,
+            long expLoot, long waterBreathing) {
         return new PlayerRpgData(rpgLevel, highestLevelReached,
-                s, d, h, m, sp, j, l, expLoot, progressionInitialized);
+                s, d, h, m, sp, j, l, expLoot, waterBreathing, progressionInitialized);
     }
 
     private static long nonNegative(long value) { return Math.max(0L, value); }
@@ -159,13 +166,14 @@ public record PlayerRpgData(
         b.writeLong(d.jumpHeight);
         b.writeLong(d.luck);
         b.writeLong(d.experienceLoot);
+        b.writeLong(d.waterBreathing);
         b.writeBoolean(d.progressionInitialized);
     }
 
     private static PlayerRpgData readFromBuffer(ByteBuf b) {
         return new PlayerRpgData(b.readInt(), b.readInt(),
                 b.readLong(), b.readLong(), b.readLong(), b.readLong(),
-                b.readLong(), b.readLong(), b.readLong(), b.readLong(),
+                b.readLong(), b.readLong(), b.readLong(), b.readLong(), b.readLong(),
                 b.readBoolean());
     }
 }

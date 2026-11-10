@@ -6,7 +6,11 @@
   "mixins": [
     "LootItemRandomChanceConditionMixin",
     "LootItemRandomChanceWithEnchantedBonusConditionMixin",
-    "LootPoolMixin"
+    "LootPoolMixin",
+    "WaterBreathingAirSupplyMixin"
+  ],
+  "client": [
+    "ClientWaterBreathingAirSupplyMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -13,6 +13,7 @@
   "screen.rpgcore.stat.jump_height": "Jump Height",
   "screen.rpgcore.stat.luck": "Luck",
   "screen.rpgcore.stat.experience_loot": "XP Loot",
+  "screen.rpgcore.stat.water_breathing": "Water Breathing",
   "screen.rpgcore.stat.points": "%s pts",
   "screen.rpgcore.effect.strength": "Damage +%s",
   "screen.rpgcore.effect.defense": "Reduce damage +%s%% (cap 80%%)",
@@ -22,5 +23,6 @@
   "screen.rpgcore.effect.jump_height": "Jump height +%s blocks",
   "screen.rpgcore.effect.luck": "Ore bonus; equipment drop chance +%s%%",
   "screen.rpgcore.effect.experience_loot": "XP bonus +%s%%",
+  "screen.rpgcore.effect.water_breathing": "Extra air +%s ticks (about +%s bubbles; 30 ticks = 1 bubble)",
   "button.rpgcore.open_panel": "RPG Attributes"
 }

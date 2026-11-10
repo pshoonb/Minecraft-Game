@@ -13,6 +13,7 @@
   "screen.rpgcore.stat.jump_height": "跳跃高度",
   "screen.rpgcore.stat.luck": "幸运",
   "screen.rpgcore.stat.experience_loot": "经验掠夺",
+  "screen.rpgcore.stat.water_breathing": "水下呼吸",
   "screen.rpgcore.stat.points": "%s 点",
   "screen.rpgcore.effect.strength": "攻击伤害 +%s 点",
   "screen.rpgcore.effect.defense": "伤害减免 +%s%%（软上限 80%%）",
@@ -22,5 +23,6 @@
   "screen.rpgcore.effect.jump_height": "跳跃高度 +%s 格",
   "screen.rpgcore.effect.luck": "矿石额外掉落；生物装备掉落概率 +%s%%",
   "screen.rpgcore.effect.experience_loot": "经验增益 +%s%%",
+  "screen.rpgcore.effect.water_breathing": "额外氧气 +%s ticks（约 +%s 个泡泡；30 ticks = 1 个泡泡）",
   "button.rpgcore.open_panel": "RPG 属性面板"
 }

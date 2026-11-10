@@ -9,7 +9,8 @@ public enum PlayerAttribute {
     SPEED(4, "speed"),
     JUMP_HEIGHT(5, "jump_height"),
     LUCK(6, "luck"),
-    EXPERIENCE_LOOT(7, "experience_loot");
+    EXPERIENCE_LOOT(7, "experience_loot"),
+    WATER_BREATHING(8, "water_breathing");
 
     private final int networkId;
     private final String serializedName;

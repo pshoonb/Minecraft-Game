@@ -74,6 +74,27 @@ public final class AttributeFormulaCalculator {
                 Math.max(0.01, 0.5 / Math.log(x + Math.E - 1.0)));
     }
 
+    /**
+     * Water Breathing: reuses the Health diminishing-return formula.
+     * The cumulative result represents additional air-supply ticks.
+     */
+    public static double waterBreathingBonusTicks(long points) {
+        return healthBonus(points);
+    }
+
+    /**
+     * Entity#getMaxAirSupply returns an integer, so round the cumulative
+     * fractional tick value to the nearest whole tick and keep it in range.
+     */
+    public static int waterBreathingBonusAirTicks(long points) {
+        double bonus = waterBreathingBonusTicks(points);
+        if (!Double.isFinite(bonus) || bonus <= 0.0) {
+            return 0;
+        }
+        long rounded = Math.round(Math.min(bonus, Integer.MAX_VALUE - 300.0));
+        return (int) Math.max(0L, Math.min(rounded, Integer.MAX_VALUE - 300L));
+    }
+
     /** Mining speed: cumulative percentage gain. */
     public static double miningSpeedPercent(long points) {
         return miningFormulaSum(points);
