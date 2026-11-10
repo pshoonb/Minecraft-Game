@@ -55,15 +55,16 @@ public final class RpgProgressionService {
 
         if (updated.equals(current)) return;
         player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
-        PlayerAttributeEffects.apply(player, updated);
+        PlayerAttributeEffects.apply(player, updated, current);
         NetworkHandler.sendSnapshot(player);
     }
 
     public static void resetAttributes(ServerPlayer player) {
         syncVanillaLevel(player);
-        PlayerRpgData updated = player.getData(ModAttachments.PLAYER_RPG_DATA.get()).resetAttributes();
+        PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        PlayerRpgData updated = current.resetAttributes();
         player.setData(ModAttachments.PLAYER_RPG_DATA.get(), updated);
-        PlayerAttributeEffects.apply(player, updated);
+        PlayerAttributeEffects.apply(player, updated, current);
         NetworkHandler.sendSnapshot(player);
     }
 }

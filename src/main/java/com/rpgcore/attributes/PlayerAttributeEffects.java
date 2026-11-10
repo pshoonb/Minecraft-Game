@@ -24,10 +24,47 @@ public final class PlayerAttributeEffects {
     }
 
     public static void apply(ServerPlayer player, PlayerRpgData data) {
+        apply(player, data, null);
+    }
+
+    /**
+     * Applies the new attribute snapshot and keeps current air consistent with
+     * the changed oxygen capacity. A player who was full before an allocation
+     * receives the new capacity immediately; a refund clamps excess air.
+     */
+    public static void apply(ServerPlayer player, PlayerRpgData data, PlayerRpgData previousData) {
         applyHealth(player, data);
         applyMovementSpeed(player, data);
         applySwimSpeed(player, data);
         applySafeFallDistance(player, data);
+        applyWaterBreathingAirCapacity(player, data, previousData);
+    }
+
+    private static void applyWaterBreathingAirCapacity(
+            ServerPlayer player, PlayerRpgData data, PlayerRpgData previousData) {
+        int newBonus = AttributeFormulaCalculator.waterBreathingBonusAirTicks(data.waterBreathing());
+        int newMaximum = player.getMaxAirSupply();
+        int currentAir = player.getAirSupply();
+
+        if (previousData == null) {
+            if (currentAir > newMaximum) {
+                player.setAirSupply(newMaximum);
+            }
+            return;
+        }
+
+        // Derive the unchanged base capacity from the new mixed-in maximum so
+        // other mods that customize max air remain compatible.
+        int baseMaximum = Math.max(0, newMaximum - newBonus);
+        int previousBonus = AttributeFormulaCalculator.waterBreathingBonusAirTicks(
+                previousData.waterBreathing());
+        long previousMaximum = (long) baseMaximum + previousBonus;
+
+        if (currentAir >= previousMaximum) {
+            player.setAirSupply(newMaximum);
+        } else if (currentAir > newMaximum) {
+            player.setAirSupply(newMaximum);
+        }
     }
 
     private static void applyHealth(ServerPlayer player, PlayerRpgData data) {
