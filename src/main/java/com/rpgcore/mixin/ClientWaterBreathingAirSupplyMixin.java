@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Keeps the local player's oxygen HUD in sync with the server-calculated capacity. */
-@Mixin(Entity.class)
+@Mixin(value = Entity.class, remap = false)
 public abstract class ClientWaterBreathingAirSupplyMixin {
-    @Inject(method = "getMaxAirSupply", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getMaxAirSupply", at = @At("RETURN"), cancellable = true, remap = false)
     private void rpgcore$applyClientWaterBreathingAir(CallbackInfoReturnable<Integer> callback) {
         if (!((Object) this instanceof LocalPlayer player)
                 || Minecraft.getInstance().player != player

@@ -250,8 +250,8 @@ public final class RpgDataScreen extends Screen {
         double jump = AttributeFormulaCalculator.jumpHeightBlocks(data.jumpHeight());
         double luck = AttributeFormulaCalculator.luckEquipmentDropBonusPercent(data.luck());
         double experience = AttributeFormulaCalculator.experienceLootBonusPercent(data.experienceLoot());
-        double waterBreathingTicks =
-                AttributeFormulaCalculator.waterBreathingBonusTicks(data.waterBreathing());
+        int waterBreathingTicks =
+                AttributeFormulaCalculator.waterBreathingBonusAirTicks(data.waterBreathing());
 
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             PlayerAttribute attribute = ATTRIBUTES[i];
@@ -267,7 +267,7 @@ public final class RpgDataScreen extends Screen {
                 case JUMP_HEIGHT -> fmt(jump);
                 case LUCK -> fmt(luck);
                 case EXPERIENCE_LOOT -> fmt(experience);
-                case WATER_BREATHING -> fmt(waterBreathingTicks);
+                case WATER_BREATHING -> Integer.toString(waterBreathingTicks);
             };
 
             if (attribute == PlayerAttribute.WATER_BREATHING) {

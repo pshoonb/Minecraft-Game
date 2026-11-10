@@ -10,9 +10,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Adds Water Breathing's calculated air ticks to player oxygen capacity on the server. */
-@Mixin(Entity.class)
+@Mixin(value = Entity.class, remap = false)
 public abstract class WaterBreathingAirSupplyMixin {
-    @Inject(method = "getMaxAirSupply", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getMaxAirSupply", at = @At("RETURN"), cancellable = true, remap = false)
     private void rpgcore$applyWaterBreathingAir(CallbackInfoReturnable<Integer> callback) {
         if (!((Object) this instanceof ServerPlayer player)) {
             return;
