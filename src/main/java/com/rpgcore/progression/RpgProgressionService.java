@@ -5,8 +5,11 @@ import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerAttribute;
 import com.rpgcore.data.PlayerRpgData;
 import com.rpgcore.network.NetworkHandler;
-import net.minecraft.server.level.ServerPlayer;
+import com.rpgcore.teleport.TeleportRequestManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Set;
 import java.util.UUID;
@@ -86,26 +89,71 @@ public final class RpgProgressionService {
         player.displayClientMessage(Component.translatable("message.rpgcore.teleport.unlock_success"), true);
     }
 
-    /** Validates the selected target again on the server before teleporting. */
+    /**
+     * Validates the selected target on the server. A target who has unlocked
+     * TP must explicitly approve the request; otherwise the teleport is immediate.
+     */
     public static void teleportToPlayer(ServerPlayer player, UUID targetId) {
-        PlayerRpgData data = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
-        if (!data.teleportUnlocked()) {
-            player.displayClientMessage(Component.translatable("message.rpgcore.teleport.locked"), true);
+        PlayerRpgData requesterData = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        if (!requesterData.teleportUnlocked()) {
+            showTeleportFailure(player, "message.rpgcore.teleport.locked");
             return;
         }
         if (targetId == null || targetId.equals(player.getUUID())) {
-            player.displayClientMessage(Component.translatable("message.rpgcore.teleport.target_invalid"), true);
+            showTeleportFailure(player, "message.rpgcore.teleport.target_invalid");
             return;
         }
-        ServerPlayer target = player.serverLevel().getServer().getPlayerList().getPlayer(targetId);
-        if (target == null || target.isRemoved()) {
-            player.displayClientMessage(Component.translatable("message.rpgcore.teleport.target_invalid"), true);
+
+        MinecraftServer server = player.getServer();
+        ServerPlayer target = server == null ? null : server.getPlayerList().getPlayer(targetId);
+        if (target == null || target.isRemoved() || target.getServer() != server) {
+            showTeleportFailure(player, "message.rpgcore.teleport.target_invalid");
             return;
         }
+
+        PlayerRpgData targetData = target.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        if (targetData.teleportUnlocked()) {
+            TeleportRequestManager.request(player, target);
+            return;
+        }
+
+        completeTeleport(player, target);
+    }
+
+    /**
+     * Completes a teleport after any required consent has been obtained.
+     * This method revalidates both players on the server immediately before use.
+     */
+    public static boolean completeTeleport(ServerPlayer player, ServerPlayer target) {
+        MinecraftServer server = player.getServer();
+        if (server == null
+                || server.getPlayerList().getPlayer(player.getUUID()) != player
+                || target == null
+                || target.isRemoved()
+                || target.getServer() != server
+                || server.getPlayerList().getPlayer(target.getUUID()) != target) {
+            showTeleportFailure(player, "message.rpgcore.teleport.target_invalid");
+            return false;
+        }
+
+        PlayerRpgData requesterData = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
+        if (!requesterData.teleportUnlocked()) {
+            showTeleportFailure(player, "message.rpgcore.teleport.locked");
+            return false;
+        }
+
         player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(),
                 Set.of(), target.getYRot(), target.getXRot());
         player.displayClientMessage(Component.translatable(
-                "message.rpgcore.teleport.success", target.getGameProfile().getName()), true);
+                "message.rpgcore.teleport.success", target.getGameProfile().getName())
+                .withStyle(ChatFormatting.GREEN), true);
+        return true;
+    }
+
+    /** Send a red Action Bar message for a failed teleport operation. */
+    public static void showTeleportFailure(ServerPlayer player, String translationKey, Object... args) {
+        player.displayClientMessage(
+                Component.translatable(translationKey, args).withStyle(ChatFormatting.RED), true);
     }
 
     public static void resetAttributes(ServerPlayer player) {

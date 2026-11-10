@@ -5,6 +5,7 @@ import com.rpgcore.combat.CombatParticipationTracker;
 import com.rpgcore.data.ModAttachments;
 import com.rpgcore.network.NetworkHandler;
 import com.rpgcore.network.PlayerSyncEvents;
+import com.rpgcore.teleport.TeleportRequestManager;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -22,6 +23,9 @@ public final class RpgCoreMod {
         NeoForge.EVENT_BUS.addListener(PlayerSyncEvents::onPlayerRespawn);
         NeoForge.EVENT_BUS.addListener(CombatParticipationTracker::onLivingDamage);
         NeoForge.EVENT_BUS.addListener(CombatParticipationTracker::onPlayerLoggedOut);
+        NeoForge.EVENT_BUS.addListener(TeleportRequestManager::registerCommands);
+        NeoForge.EVENT_BUS.addListener(TeleportRequestManager::onServerTick);
+        NeoForge.EVENT_BUS.addListener(TeleportRequestManager::onPlayerLoggedOut);
 
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, RpgAttributeEvents::onLivingDamage);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, RpgAttributeEvents::onBreakSpeed);

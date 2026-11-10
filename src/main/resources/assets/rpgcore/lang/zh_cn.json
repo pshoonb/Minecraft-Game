@@ -46,5 +46,20 @@
   "message.rpgcore.teleport.unlock_success": "TP 功能已解锁，已扣除 10,000 点属性点。",
   "message.rpgcore.teleport.locked": "TP 功能尚未解锁。",
   "message.rpgcore.teleport.target_invalid": "目标玩家已离线或无效，请重新打开列表。",
-  "message.rpgcore.teleport.success": "已传送到玩家 %s。"
+  "message.rpgcore.teleport.success": "已成功传送到玩家 %s。",
+  "message.rpgcore.teleport.request_sent": "已向玩家 %s 发送传送请求，等待对方同意。",
+  "message.rpgcore.teleport.request_received": "玩家 %s 请求传送到你的位置。输入 /accept %s 同意，或 /deny %s 拒绝（60 秒后过期）。",
+  "message.rpgcore.teleport.request_already_pending": "你已经向该玩家发送过待处理的传送请求。",
+  "message.rpgcore.teleport.no_pending_request": "没有来自玩家 %s 的待处理传送请求。",
+  "message.rpgcore.teleport.requester_offline": "请求传送的玩家 %s 已离线，无法完成传送。",
+  "message.rpgcore.teleport.target_no_longer_eligible": "玩家 %s 当前无法接受传送请求，传送失败。",
+  "message.rpgcore.teleport.target_no_longer_eligible_self": "你当前未解锁 TP，无法同意这次传送。",
+  "message.rpgcore.teleport.request_accepted_target": "你已同意 %s 的请求，对方已传送到你这里。",
+  "message.rpgcore.teleport.request_denied": "玩家 %s 拒绝了你的传送请求，传送失败。",
+  "message.rpgcore.teleport.request_denied_target": "你已拒绝玩家 %s 的传送请求。",
+  "message.rpgcore.teleport.request_expired": "传送请求已超时，传送失败。",
+  "message.rpgcore.teleport.request_expired_target": "来自玩家 %s 的传送请求已超时。",
+  "message.rpgcore.teleport.target_went_offline": "玩家 %s 已离线，传送请求失败。",
+  "message.rpgcore.teleport.requester_went_offline": "发送传送请求的玩家 %s 已离线，请求已取消。",
+  "message.rpgcore.teleport.requester_cancelled_other": "玩家 %s 已完成其他传送，请求已自动取消。"
 }

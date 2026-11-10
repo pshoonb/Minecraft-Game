@@ -46,5 +46,20 @@
   "message.rpgcore.teleport.unlock_success": "TP unlocked. 10,000 attribute points have been spent.",
   "message.rpgcore.teleport.locked": "TP is not unlocked.",
   "message.rpgcore.teleport.target_invalid": "That player is offline or invalid. Reopen the list and try again.",
-  "message.rpgcore.teleport.success": "Teleported to player %s."
+  "message.rpgcore.teleport.success": "Successfully teleported to %s.",
+  "message.rpgcore.teleport.request_sent": "Teleport request sent to %s. Waiting for approval.",
+  "message.rpgcore.teleport.request_received": "%s wants to teleport to you. Use /accept %s to allow or /deny %s to reject (expires in 60 seconds).",
+  "message.rpgcore.teleport.request_already_pending": "You already have a pending teleport request to that player.",
+  "message.rpgcore.teleport.no_pending_request": "There is no pending teleport request from %s.",
+  "message.rpgcore.teleport.requester_offline": "The requesting player %s is offline. Teleport could not be completed.",
+  "message.rpgcore.teleport.target_no_longer_eligible": "Player %s can no longer approve this teleport request. Teleport failed.",
+  "message.rpgcore.teleport.target_no_longer_eligible_self": "You no longer have TP unlocked and cannot approve this request.",
+  "message.rpgcore.teleport.request_accepted_target": "You approved %s's request. They have teleported to you.",
+  "message.rpgcore.teleport.request_denied": "Player %s denied your teleport request. Teleport failed.",
+  "message.rpgcore.teleport.request_denied_target": "You denied %s's teleport request.",
+  "message.rpgcore.teleport.request_expired": "Teleport request expired. Teleport failed.",
+  "message.rpgcore.teleport.request_expired_target": "The teleport request from %s has expired.",
+  "message.rpgcore.teleport.target_went_offline": "Player %s went offline. Teleport request failed.",
+  "message.rpgcore.teleport.requester_went_offline": "The requesting player %s went offline. Request cancelled.",
+  "message.rpgcore.teleport.requester_cancelled_other": "Player %s completed another teleport. This request was cancelled."
 }
