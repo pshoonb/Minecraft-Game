@@ -267,6 +267,8 @@ public final class PlayerTeleportScreen extends Screen {
         boolean backVisible = backButton.visible;
         confirmButton.visible = false;
         backButton.visible = false;
+        for (Button button : incomingAcceptButtons) button.visible = false;
+        for (Button button : incomingDenyButtons) button.visible = false;
         sendTabButton.visible = false;
         receivedTabButton.visible = false;
 
@@ -282,6 +284,13 @@ public final class PlayerTeleportScreen extends Screen {
             }
         }
 
+        if (showingIncomingRequests) {
+            for (int i = 0; i < incomingAcceptButtons.size(); i++) {
+                boolean visible = i < incoming.size() && incomingNameWidgets.get(i).visible;
+                incomingAcceptButtons.get(i).visible = visible;
+                incomingDenyButtons.get(i).visible = visible;
+            }
+        }
         sendTabButton.visible = true; receivedTabButton.visible = true;
         sendTabButton.render(graphics, mouseX, mouseY, partialTick);
         receivedTabButton.render(graphics, mouseX, mouseY, partialTick);
@@ -300,7 +309,7 @@ public final class PlayerTeleportScreen extends Screen {
         if (maxScroll > 0) {
             int trackX = panelRight - 5;
             int trackHeight = listBottom - listTop;
-            int contentHeight = targets.size() * ROW_HEIGHT;
+            int contentHeight = displayedCount * ROW_HEIGHT;
             int thumbHeight = Math.max(18, trackHeight * trackHeight / contentHeight);
             int thumbTravel = Math.max(0, trackHeight - thumbHeight);
             int thumbY = listTop
@@ -358,6 +367,7 @@ public final class PlayerTeleportScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (showingIncomingRequests) return super.mouseClicked(mouseX, mouseY, button);
         if (button == 0 && mouseX >= listLeft && mouseX < listRight
                 && mouseY >= listTop && mouseY < listBottom) {
             int index = (int) ((mouseY - listTop + scrollOffset) / ROW_HEIGHT);
