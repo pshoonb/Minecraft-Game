@@ -40,7 +40,6 @@ public final class PlayerTeleportScreen extends Screen {
         maxScroll = 0;
 
         ClientTeleportTargetsCache.clear();
-        updateLayout(0);
         int buttonsLeft = (width - 212) / 2;
         confirmButton = addRenderableWidget(Button.builder(
                 Component.translatable("screen.rpgcore.teleport.confirm"),
@@ -51,6 +50,7 @@ public final class PlayerTeleportScreen extends Screen {
                 Component.translatable("screen.rpgcore.teleport.back"),
                 button -> onClose())
                 .bounds(buttonsLeft + 132, footerY, 80, 20).build());
+        updateLayout(0);
 
         PacketDistributor.sendToServer(new RequestTeleportTargetsPayload());
     }
