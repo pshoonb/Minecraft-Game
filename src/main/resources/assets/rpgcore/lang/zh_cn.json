@@ -29,7 +29,7 @@
   "screen.rpgcore.teleport.locked": "TP 未解锁",
   "screen.rpgcore.teleport.unlocked": "TP 已解锁",
   "screen.rpgcore.teleport.require_level": "必须曾经达到过 30 级，才能解锁 TP。",
-  "screen.rpgcore.teleport.unlock_cost": "花费 10,000 点可用属性点解锁传送功能。",
+  "screen.rpgcore.teleport.unlock_cost": "花费 10,000 点可用属性点解锁传送功能。当前可用：%s 点。",
   "screen.rpgcore.teleport.need_points": "需要 10,000 点可用属性点；当前可用：%s。",
   "screen.rpgcore.teleport.unlocked_tooltip": "已解锁。请在物品栏中点击 TP 按钮。",
   "screen.rpgcore.teleport.title": "传送到玩家",
