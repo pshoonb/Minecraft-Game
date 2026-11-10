@@ -4,6 +4,7 @@ import com.rpgcore.data.ModAttachments;
 import com.rpgcore.data.PlayerAttribute;
 import com.rpgcore.data.PlayerRpgData;
 import com.rpgcore.progression.RpgProgressionService;
+import com.rpgcore.teleport.TeleportRequestManager;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
@@ -31,6 +32,8 @@ public final class NetworkHandler {
                 NetworkHandler::handleRequestTeleportTargets);
         registrar.playToServer(TeleportToPlayerPayload.TYPE, TeleportToPlayerPayload.STREAM_CODEC,
                 NetworkHandler::handleTeleportToPlayer);
+        registrar.playToServer(RespondTeleportRequestPayload.TYPE, RespondTeleportRequestPayload.STREAM_CODEC,
+                NetworkHandler::handleRespondTeleportRequest);
     }
 
     private static void handleRequest(RequestRpgDataPayload payload, IPayloadContext context) {
@@ -64,6 +67,17 @@ public final class NetworkHandler {
         if (context.player() instanceof ServerPlayer player) {
             RpgProgressionService.teleportToPlayer(player, payload.targetId());
         }
+    }
+
+    private static void handleRespondTeleportRequest(RespondTeleportRequestPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            TeleportRequestManager.respondFromScreen(player, payload.requesterId(), payload.accept());
+            TeleportRequestManager.sendIncomingRequests(player);
+        }
+    }
+
+    public static void sendIncomingRequests(ServerPlayer player, List<TeleportIncomingRequestsPayload.Request> requests) {
+        PacketDistributor.sendToPlayer(player, new TeleportIncomingRequestsPayload(requests));
     }
 
     public static void sendTeleportTargets(ServerPlayer player) {
