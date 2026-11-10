@@ -16,12 +16,12 @@
 - [ ] Legacy placeholder attributes Agility, Constitution, Intelligence and Spirit no longer appear.
 - [ ] All eight attributes can be allocated and reset.
 - [ ] Each attribute row displays the allocated point count and an effect description.
-- [ ] Experience Loot displays a dynamic percentage using the same provisional per-point constant as the server calculation.
-- [ ] The seven other attributes describe their intended gameplay effect and explicitly state that numeric conversion is not implemented yet.
+- [ ] All eight attributes display their current calculated total effect using the same formula calculator as the gameplay code.
+- [ ] Percentage effects show the numeric value and literal percent sign correctly in both Simplified Chinese and English.
 - [ ] The RPG Attributes screen fills the available game window instead of displaying a fixed 410x236 center panel.
 - [ ] The responsive two-column layout keeps all eight attributes, allocation controls, effect text, reset and back controls visible at common window sizes and GUI scales.
 - [ ] Each attribute has +1 and +10 in the upper button row, with +50 directly below +1 and +100 directly below +10.
-- [ ] Each allocation amount is accepted only when that many unspent attribute points are available; insufficient points do not partially allocate.
+- [ ] Each +N allocation button adds min(N, available points); for example, +50 with 7 points remaining allocates exactly 7 points.
 - [ ] The layout remains readable in Simplified Chinese and English at multiple GUI scales and window aspect ratios.
 - [ ] The inventory screen button opens the full-window RPG Attributes screen.
 - [ ] The Back button and Escape return to the inventory screen that opened the RPG Attributes screen.
@@ -79,7 +79,7 @@
 - [ ] Strength affects attack damage along approved balance rules.
 - [ ] Defense reduces incoming damage along approved balance rules.
 - [ ] Health changes max health and handles current health correctly.
-- [ ] Mining Speed affects block breaking without client/server desynchronization.
+- [ ] Mining Speed affects both client-side dig progress and server-side block breaking without client/server desynchronization.
 - [ ] Movement Speed works on land and in water, while sneaking, sprinting, flying and riding.
 - [ ] Jump Height works with the vanilla Jump Boost effect.
 - [ ] Luck's ore, chance-predicate, weighted-pool and deterministic-entry behavior produces no unintended duplicate rewards.
