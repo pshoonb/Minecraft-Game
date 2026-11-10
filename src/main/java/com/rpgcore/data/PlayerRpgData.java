@@ -108,16 +108,27 @@ public record PlayerRpgData(
 
     public PlayerRpgData addAttribute(PlayerAttribute attribute, long amount) {
         if (attribute == null || amount <= 0L) return this;
-        long next = saturatedAdd(valueOf(attribute), amount);
+        return withAttributeValue(attribute, saturatedAdd(valueOf(attribute), amount));
+    }
+
+    /** Removes up to the requested number of points without allowing negatives. */
+    public PlayerRpgData removeAttribute(PlayerAttribute attribute, long amount) {
+        if (attribute == null || amount <= 0L) return this;
+        long current = valueOf(attribute);
+        long next = current - Math.min(current, amount);
+        return withAttributeValue(attribute, next);
+    }
+
+    private PlayerRpgData withAttributeValue(PlayerAttribute attribute, long value) {
         return switch (attribute) {
-            case STRENGTH -> withAttributes(next, defense, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
-            case DEFENSE -> withAttributes(strength, next, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
-            case HEALTH -> withAttributes(strength, defense, next, miningSpeed, speed, jumpHeight, luck, experienceLoot);
-            case MINING_SPEED -> withAttributes(strength, defense, health, next, speed, jumpHeight, luck, experienceLoot);
-            case SPEED -> withAttributes(strength, defense, health, miningSpeed, next, jumpHeight, luck, experienceLoot);
-            case JUMP_HEIGHT -> withAttributes(strength, defense, health, miningSpeed, speed, next, luck, experienceLoot);
-            case LUCK -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, next, experienceLoot);
-            case EXPERIENCE_LOOT -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, next);
+            case STRENGTH -> withAttributes(value, defense, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
+            case DEFENSE -> withAttributes(strength, value, health, miningSpeed, speed, jumpHeight, luck, experienceLoot);
+            case HEALTH -> withAttributes(strength, defense, value, miningSpeed, speed, jumpHeight, luck, experienceLoot);
+            case MINING_SPEED -> withAttributes(strength, defense, health, value, speed, jumpHeight, luck, experienceLoot);
+            case SPEED -> withAttributes(strength, defense, health, miningSpeed, value, jumpHeight, luck, experienceLoot);
+            case JUMP_HEIGHT -> withAttributes(strength, defense, health, miningSpeed, speed, value, luck, experienceLoot);
+            case LUCK -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, value, experienceLoot);
+            case EXPERIENCE_LOOT -> withAttributes(strength, defense, health, miningSpeed, speed, jumpHeight, luck, value);
         };
     }
 
