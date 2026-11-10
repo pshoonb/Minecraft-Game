@@ -506,44 +506,87 @@ def download_and_stage_installer_update(release_info, current_exe):
     [string]$CurrentExe,
     [string]$StagedExe,
     [string]$UpdateToken,
+    [string]$ExpectedHash,
     [string]$LogPath
 )
 
 $ErrorActionPreference = 'Stop'
 $backupPath = "$CurrentExe.update-previous-$UpdateToken"
-$deadline = (Get-Date).AddSeconds(60)
+
+function Write-UpdateLog {
+    param([string]$Message)
+    $stamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    Add-Content -LiteralPath $LogPath -Value "$stamp  $Message" -Encoding UTF8
+}
+
+function Show-UpdateError {
+    param([string]$Message)
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        [System.Windows.Forms.MessageBox]::Show(
+            $Message,
+            'RPG Core Installer - Update failed',
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
+    }
+    catch {
+        # The detailed error is still available in the update log.
+    }
+}
 
 try {
+    $logDirectory = Split-Path -LiteralPath $LogPath -Parent
+    New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
+    Set-Content -LiteralPath $LogPath -Value 'RPG Core installer update started.' -Encoding UTF8
+    Write-UpdateLog "Waiting for old installer process PID $ParentPid to exit."
+
+    $deadline = (Get-Date).AddSeconds(90)
     while (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) {
         if ((Get-Date) -gt $deadline) {
-            throw 'The old installer did not exit in time.'
+            throw 'The old installer did not exit within 90 seconds. Close it manually and try again.'
         }
         Start-Sleep -Milliseconds 250
     }
+    Write-UpdateLog 'Old installer process has exited.'
 
     if (-not (Test-Path -LiteralPath $StagedExe -PathType Leaf)) {
-        throw 'The verified staged installer is missing.'
+        throw "The verified staged installer is missing: $StagedExe"
     }
     if (Test-Path -LiteralPath $backupPath) {
-        throw 'A temporary rollback file already exists; refusing to overwrite it.'
+        throw "A temporary rollback file already exists: $backupPath"
     }
 
+    $stagedHash = (Get-FileHash -LiteralPath $StagedExe -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($stagedHash -ne $ExpectedHash.ToLowerInvariant()) {
+        throw 'The staged installer SHA-256 does not match the expected Release checksum.'
+    }
+
+    Write-UpdateLog 'Moving the old installer to its rollback file.'
     [System.IO.File]::Move($CurrentExe, $backupPath)
 
     try {
+        Write-UpdateLog 'Installing the verified new executable.'
         [System.IO.File]::Move($StagedExe, $CurrentExe)
-        $workingDirectory = Split-Path -LiteralPath $CurrentExe -Parent
-        $newProcess = Start-Process -FilePath $CurrentExe -WorkingDirectory $workingDirectory -PassThru
-        Start-Sleep -Milliseconds 1500
 
-        if ($newProcess.HasExited) {
-            throw 'The updated installer exited immediately after launch.'
+        $installedHash = (Get-FileHash -LiteralPath $CurrentExe -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($installedHash -ne $ExpectedHash.ToLowerInvariant()) {
+            throw 'The installed executable failed its SHA-256 verification.'
         }
 
-        Remove-Item -LiteralPath $backupPath -Force
-        ('Installer update succeeded: ' + $CurrentExe) | Set-Content -LiteralPath $LogPath -Encoding UTF8
+        $workingDirectory = Split-Path -LiteralPath $CurrentExe -Parent
+        Write-UpdateLog 'Starting the updated installer.'
+        $newProcess = Start-Process -FilePath $CurrentExe -WorkingDirectory $workingDirectory -PassThru
+        Start-Sleep -Seconds 5
+
+        if ($newProcess.HasExited) {
+            throw ('The updated installer process exited immediately (exit code ' + $newProcess.ExitCode + ').')
+        }
+
+        Write-UpdateLog ('Updated installer started successfully (PID ' + $newProcess.Id + ').')
     }
     catch {
+        Write-UpdateLog 'Update failed after replacing the executable; restoring the previous installer.'
         if (Test-Path -LiteralPath $CurrentExe) {
             Remove-Item -LiteralPath $CurrentExe -Force
         }
@@ -552,9 +595,30 @@ try {
         }
         throw
     }
+
+    try {
+        Remove-Item -LiteralPath $backupPath -Force
+        Write-UpdateLog 'Rollback file removed. Update completed.'
+    }
+    catch {
+        Write-UpdateLog ('Update succeeded, but the rollback file could not be removed: ' + $_.Exception.Message)
+    }
 }
 catch {
-    ($_ | Out-String) | Set-Content -LiteralPath $LogPath -Encoding UTF8
+    $details = ($_ | Out-String).Trim()
+    try {
+        Write-UpdateLog ('ERROR: ' + $details)
+    }
+    catch {
+        # Preserve the original failure even if logging is unavailable.
+    }
+    $newLine = [Environment]::NewLine
+    Show-UpdateError(
+        'The RPG Core installer could not restart automatically.' + $newLine + $newLine +
+        $details + $newLine + $newLine +
+        'Your previous installer was restored when possible. Check this log for details:' +
+        $newLine + $LogPath
+    )
     exit 1
 }
 """;
@@ -586,9 +650,13 @@ catch {
                 "-CurrentExe", str(current_exe),
                 "-StagedExe", str(staged_path),
                 "-UpdateToken", update_token,
+                "-ExpectedHash", release_info["sha256"],
                 "-LogPath", str(log_path)
             ],
-            cwd=str(BASE_DIR),
+            cwd=str(current_exe.parent),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             close_fds=True,
             creationflags=creation_flags
         )
@@ -629,8 +697,9 @@ def check_frozen_installer_update():
             f"Current installer: {local_version}\n"
             f"Latest version: {latest_version}\n\n"
             "The new EXE will be downloaded and checked with SHA-256 before replacing this file.\n"
-            "The installer will close briefly and then restart with the updated version.\n\n"
-            "Select “Yes” to update now, or “No” to continue with this version."
+            "After the EXE update, it will restart and then check for the latest RPG Core JAR.\n\n"
+            "Select “Yes” to update the installer EXE now.\n"
+            "Select “No” to skip only the EXE update and continue to the JAR installation step."
         )
 
         if not should_update:
@@ -640,8 +709,8 @@ def check_frozen_installer_update():
         if download_and_stage_installer_update(release_info, current_exe):
             show_info(
                 "The new installer has been downloaded and verified.\n\n"
-                "This window will close while the updater replaces the EXE. "
-                "The updated installer will then reopen automatically."
+                "Click OK to close this window. The updater will replace the EXE and reopen it.\n\n"
+                "If the restart fails, Windows will show an error with the diagnostic log location."
             )
             return True
 
