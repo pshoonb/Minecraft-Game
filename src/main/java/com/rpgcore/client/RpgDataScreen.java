@@ -19,7 +19,6 @@ import java.util.Locale;
 public final class RpgDataScreen extends Screen {
     private static final PlayerAttribute[] ATTRIBUTES = PlayerAttribute.values();
     private static final int GRID_COLUMNS = 2;
-    private static final int GRID_ROWS = 4;
 
     private final Screen parentScreen;
     private final StringWidget[] valueLabels = new StringWidget[ATTRIBUTES.length];
@@ -51,9 +50,11 @@ public final class RpgDataScreen extends Screen {
         boolean compact = height < 260;
         boolean veryCompact = height < 200;
         contentMargin = Math.min(18, Math.max(8, width / 32));
-        int columnGap = Math.min(18, Math.max(6, width / 40));
+        int gridColumns = width < 700 && height >= 260 ? 1 : GRID_COLUMNS;
+        int gridRows = (ATTRIBUTES.length + gridColumns - 1) / gridColumns;
+        int columnGap = gridColumns == 1 ? 0 : Math.min(18, Math.max(6, width / 40));
         int contentWidth = Math.max(1, width - contentMargin * 2 - columnGap);
-        int columnWidth = contentWidth / GRID_COLUMNS;
+        int columnWidth = contentWidth / gridColumns;
 
         int titleY = veryCompact ? 3 : compact ? 5 : 13;
         int subtitleY = veryCompact ? 15 : compact ? 18 : 30;
@@ -80,14 +81,14 @@ public final class RpgDataScreen extends Screen {
         resetButtonY = height - (compact ? 25 : 29);
         int footerTop = resetButtonY - 8;
         int availableGridHeight = Math.max(4, footerTop - headerBottom - 8);
-        int rowHeight = Math.max(20, Math.min(compact ? 48 : 84, availableGridHeight / GRID_ROWS));
+        int rowHeight = Math.max(20, Math.min(compact ? 48 : 84, availableGridHeight / gridRows));
         int gridTop = headerBottom
-                + Math.max(0, (availableGridHeight - rowHeight * GRID_ROWS) / 2);
+                + Math.max(0, (availableGridHeight - rowHeight * gridRows) / 2);
 
         for (int i = 0; i < ATTRIBUTES.length; i++) {
             PlayerAttribute attribute = ATTRIBUTES[i];
-            int row = i / GRID_COLUMNS;
-            int column = i % GRID_COLUMNS;
+            int row = i / gridColumns;
+            int column = i % gridColumns;
             int cellX = contentMargin + column * (columnWidth + columnGap);
             int cellY = gridTop + row * rowHeight;
 
@@ -96,17 +97,17 @@ public final class RpgDataScreen extends Screen {
             cardWidths[i] = columnWidth;
             cardHeights[i] = rowHeight;
 
-            int buttonWidth = Math.max(22, Math.min(30, (columnWidth - 20) / 7));
-            int buttonGap = 3;
-            int buttonGroupWidth = buttonWidth * 2 + buttonGap;
+            int buttonWidth = Math.max(28, Math.min(36, (columnWidth - 28) / 5));
+            int buttonGap = 2;
+            int buttonGroupWidth = buttonWidth * 4 + buttonGap * 3;
             int buttonLeft = cellX + columnWidth - 7 - buttonGroupWidth;
-            int buttonHeight = Math.max(10, Math.min(14, (rowHeight - 5) / 2));
-            int buttonTop = cellY + (rowHeight - (buttonHeight * 2 + 2)) / 2;
+            int buttonHeight = Math.max(10, Math.min(16, (rowHeight - 6) / 2));
+            int buttonTop = cellY + Math.max(0, (rowHeight - (buttonHeight * 2 + 2)) / 2);
 
             int textLeft = cellX + 7;
-            int textWidth = Math.max(64, buttonLeft - textLeft - 8);
-            int valueWidth = Math.min(48, Math.max(34, textWidth / 4));
-            int nameWidth = Math.max(34, textWidth - valueWidth - 5);
+            int textWidth = Math.max(1, buttonLeft - textLeft - 8);
+            int valueWidth = Math.min(48, Math.max(30, textWidth / 4));
+            int nameWidth = Math.max(1, textWidth - valueWidth - 5);
             int firstLineY = cellY + rowHeight / 2 - 8;
             int effectY = firstLineY + 13;
 
@@ -120,29 +121,18 @@ public final class RpgDataScreen extends Screen {
                     Component.translatable("screen.rpgcore.effect." + attribute.serializedName()),
                     0xFFB8B0A2, false);
 
-            int leftButtonX = buttonLeft;
-            int rightButtonX = buttonLeft + buttonWidth + buttonGap;
-            int lowerButtonY = buttonTop + buttonHeight + 2;
+            int[] adjustmentAmounts = {-1, -10, -50, -100, 1, 10, 50, 100};
+            for (int buttonIndex = 0; buttonIndex < adjustmentAmounts.length; buttonIndex++) {
+                int amount = adjustmentAmounts[buttonIndex];
+                int buttonX = buttonLeft + (buttonIndex % 4) * (buttonWidth + buttonGap);
+                int buttonY = buttonTop + (buttonIndex / 4) * (buttonHeight + 2);
+                String label = amount > 0 ? "+" + amount : Integer.toString(amount);
 
-            addRenderableWidget(Button.builder(Component.literal("+1"),
-                    button -> PacketDistributor.sendToServer(
-                            new AllocateAttributePayload(attribute.networkId(), 1)))
-                    .bounds(leftButtonX, buttonTop, buttonWidth, buttonHeight).build());
-
-            addRenderableWidget(Button.builder(Component.literal("+10"),
-                    button -> PacketDistributor.sendToServer(
-                            new AllocateAttributePayload(attribute.networkId(), 10)))
-                    .bounds(rightButtonX, buttonTop, buttonWidth, buttonHeight).build());
-
-            addRenderableWidget(Button.builder(Component.literal("+50"),
-                    button -> PacketDistributor.sendToServer(
-                            new AllocateAttributePayload(attribute.networkId(), 50)))
-                    .bounds(leftButtonX, lowerButtonY, buttonWidth, buttonHeight).build());
-
-            addRenderableWidget(Button.builder(Component.literal("+100"),
-                    button -> PacketDistributor.sendToServer(
-                            new AllocateAttributePayload(attribute.networkId(), 100)))
-                    .bounds(rightButtonX, lowerButtonY, buttonWidth, buttonHeight).build());
+                addRenderableWidget(Button.builder(Component.literal(label),
+                        button -> PacketDistributor.sendToServer(
+                                new AllocateAttributePayload(attribute.networkId(), amount)))
+                        .bounds(buttonX, buttonY, buttonWidth, buttonHeight).build());
+            }
         }
 
         int totalFooterWidth = 260;
