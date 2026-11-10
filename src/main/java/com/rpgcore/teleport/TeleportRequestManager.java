@@ -6,23 +6,27 @@ import com.rpgcore.progression.RpgProgressionService;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-
 import com.mojang.brigadier.arguments.StringArgumentType;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /** Holds short-lived teleport consent requests on the logical server. */
 public final class TeleportRequestManager {
@@ -42,23 +46,58 @@ public final class TeleportRequestManager {
 
     public static void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("accept")
+                .executes(TeleportRequestManager::executeAcceptLatest)
                 .then(Commands.argument("player", StringArgumentType.word())
+                        .suggests(TeleportRequestManager::suggestPendingRequesters)
                         .executes(TeleportRequestManager::executeAccept)));
         event.getDispatcher().register(Commands.literal("deny")
+                .executes(TeleportRequestManager::executeDenyLatest)
                 .then(Commands.argument("player", StringArgumentType.word())
+                        .suggests(TeleportRequestManager::suggestPendingRequesters)
                         .executes(TeleportRequestManager::executeDeny)));
+    }
+
+    private static int executeAcceptLatest(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        return acceptLatest(context.getSource().getPlayerOrException());
     }
 
     private static int executeAccept(CommandContext<CommandSourceStack> context)
             throws CommandSyntaxException {
         ServerPlayer target = context.getSource().getPlayerOrException();
-        return accept(target, StringArgumentType.getString(context, "player"));
+        String requesterName = StringArgumentType.getString(context, "player");
+        return "*".equals(requesterName) ? acceptAll(target) : accept(target, requesterName);
+    }
+
+    private static int executeDenyLatest(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        return denyLatest(context.getSource().getPlayerOrException());
     }
 
     private static int executeDeny(CommandContext<CommandSourceStack> context)
             throws CommandSyntaxException {
         ServerPlayer target = context.getSource().getPlayerOrException();
-        return deny(target, StringArgumentType.getString(context, "player"));
+        String requesterName = StringArgumentType.getString(context, "player");
+        return "*".equals(requesterName) ? denyAll(target) : deny(target, requesterName);
+    }
+
+    private static CompletableFuture<Suggestions> suggestPendingRequesters(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        ServerPlayer target = context.getSource().getPlayer();
+        if (target == null) {
+            return builder.buildFuture();
+        }
+
+        MinecraftServer server = target.getServer();
+        if (server != null) {
+            expireRequests(server, System.currentTimeMillis());
+        }
+
+        builder.suggest("*");
+        for (PendingRequest pending : pendingForTarget(target.getUUID())) {
+            builder.suggest(pending.requesterName());
+        }
+        return builder.buildFuture();
     }
 
     /** Creates a consent request after the caller has verified both players and TP unlock state. */
@@ -105,6 +144,24 @@ public final class TeleportRequestManager {
                 target.getGameProfile().getName()).withStyle(ChatFormatting.YELLOW), true);
     }
 
+    /** Accepts the newest outstanding request. */
+    private static int acceptLatest(ServerPlayer target) {
+        MinecraftServer server = target.getServer();
+        if (server == null) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+        expireRequests(server, System.currentTimeMillis());
+
+        List<PendingRequest> pending = pendingForTarget(target.getUUID());
+        if (pending.isEmpty()) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+        return acceptPending(target, pending.get(0).requesterId(), server);
+    }
+
+    /** Accepts the request from the named player. */
     private static int accept(ServerPlayer target, String requesterName) {
         MinecraftServer server = target.getServer();
         if (server == null) {
@@ -114,10 +171,49 @@ public final class TeleportRequestManager {
         }
         expireRequests(server, System.currentTimeMillis());
 
-        PendingRequest pending = removePending(target.getUUID(), requesterName);
+        PendingRequest pending = findPendingByName(target.getUUID(), requesterName);
         if (pending == null) {
             RpgProgressionService.showTeleportFailure(
                     target, "message.rpgcore.teleport.no_pending_request", requesterName);
+            return 0;
+        }
+        return acceptPending(target, pending.requesterId(), server);
+    }
+
+    /** Accepts every currently outstanding request addressed to this player. */
+    private static int acceptAll(ServerPlayer target) {
+        MinecraftServer server = target.getServer();
+        if (server == null) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+        expireRequests(server, System.currentTimeMillis());
+
+        List<PendingRequest> pending = pendingForTarget(target.getUUID());
+        if (pending.isEmpty()) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+
+        int accepted = 0;
+        for (PendingRequest request : pending) {
+            int result = acceptPending(target, request.requesterId(), server);
+            if (result == Command.SINGLE_SUCCESS) {
+                accepted++;
+            }
+        }
+
+        target.sendSystemMessage(Component.translatable(
+                "message.rpgcore.teleport.accept_all_summary", accepted));
+        return accepted > 0 ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    /** Removes and processes one request by requester UUID. */
+    private static int acceptPending(
+            ServerPlayer target, UUID requesterId, MinecraftServer server) {
+        PendingRequest pending = removePending(target.getUUID(), requesterId);
+        if (pending == null) {
+            showNoPendingRequests(target);
             return 0;
         }
 
@@ -142,13 +238,31 @@ public final class TeleportRequestManager {
             return 0;
         }
 
-        target.displayClientMessage(Component.translatable(
+        target.sendSystemMessage(Component.translatable(
                 "message.rpgcore.teleport.request_accepted_target",
-                requester.getGameProfile().getName()).withStyle(ChatFormatting.GREEN), true);
+                requester.getGameProfile().getName()).withStyle(ChatFormatting.GREEN));
         cancelOtherRequestsFrom(requester, target.getUUID(), server);
         return Command.SINGLE_SUCCESS;
     }
 
+    /** Denies the newest outstanding request. */
+    private static int denyLatest(ServerPlayer target) {
+        MinecraftServer server = target.getServer();
+        if (server == null) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+        expireRequests(server, System.currentTimeMillis());
+
+        List<PendingRequest> pending = pendingForTarget(target.getUUID());
+        if (pending.isEmpty()) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+        return denyPending(target, pending.get(0).requesterId(), server);
+    }
+
+    /** Denies the request from the named player. */
     private static int deny(ServerPlayer target, String requesterName) {
         MinecraftServer server = target.getServer();
         if (server == null) {
@@ -158,10 +272,47 @@ public final class TeleportRequestManager {
         }
         expireRequests(server, System.currentTimeMillis());
 
-        PendingRequest pending = removePending(target.getUUID(), requesterName);
+        PendingRequest pending = findPendingByName(target.getUUID(), requesterName);
         if (pending == null) {
             RpgProgressionService.showTeleportFailure(
                     target, "message.rpgcore.teleport.no_pending_request", requesterName);
+            return 0;
+        }
+        return denyPending(target, pending.requesterId(), server);
+    }
+
+    /** Denies all currently outstanding requests addressed to this player. */
+    private static int denyAll(ServerPlayer target) {
+        MinecraftServer server = target.getServer();
+        if (server == null) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+        expireRequests(server, System.currentTimeMillis());
+
+        List<PendingRequest> pending = pendingForTarget(target.getUUID());
+        if (pending.isEmpty()) {
+            showNoPendingRequests(target);
+            return 0;
+        }
+
+        int denied = 0;
+        for (PendingRequest request : pending) {
+            if (denyPending(target, request.requesterId(), server) == Command.SINGLE_SUCCESS) {
+                denied++;
+            }
+        }
+
+        target.sendSystemMessage(Component.translatable(
+                "message.rpgcore.teleport.deny_all_summary", denied));
+        return denied > 0 ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    /** Removes and denies one request by requester UUID. */
+    private static int denyPending(
+            ServerPlayer target, UUID requesterId, MinecraftServer server) {
+        PendingRequest pending = removePending(target.getUUID(), requesterId);
+        if (pending == null) {
             return 0;
         }
 
@@ -175,31 +326,48 @@ public final class TeleportRequestManager {
         RpgProgressionService.showTeleportFailure(
                 requester, "message.rpgcore.teleport.request_denied",
                 target.getGameProfile().getName());
-        target.displayClientMessage(Component.translatable(
+        target.sendSystemMessage(Component.translatable(
                 "message.rpgcore.teleport.request_denied_target",
-                pending.requesterName()).withStyle(ChatFormatting.GREEN), true);
+                pending.requesterName()).withStyle(ChatFormatting.GREEN));
         return Command.SINGLE_SUCCESS;
     }
 
-    /** Removes one matching request; names are compared without case sensitivity. */
-    private static PendingRequest removePending(UUID targetId, String requesterName) {
+    private static void showNoPendingRequests(ServerPlayer target) {
+        RpgProgressionService.showTeleportFailure(
+                target, "message.rpgcore.teleport.no_pending_requests");
+    }
+
+    /** Returns pending requests newest-first. */
+    private static List<PendingRequest> pendingForTarget(UUID targetId) {
+        Map<UUID, PendingRequest> requests = REQUESTS_BY_TARGET.get(targetId);
+        if (requests == null || requests.isEmpty()) {
+            return List.of();
+        }
+        return requests.values().stream()
+                .sorted(Comparator.comparingLong(PendingRequest::expiresAtMillis).reversed())
+                .toList();
+    }
+
+    private static PendingRequest findPendingByName(UUID targetId, String requesterName) {
+        Map<UUID, PendingRequest> requests = REQUESTS_BY_TARGET.get(targetId);
+        if (requests == null) {
+            return null;
+        }
+        for (PendingRequest pending : requests.values()) {
+            if (pending.requesterName().equalsIgnoreCase(requesterName)) {
+                return pending;
+            }
+        }
+        return null;
+    }
+
+    /** Removes one matching request by target and requester UUID. */
+    private static PendingRequest removePending(UUID targetId, UUID requesterId) {
         Map<UUID, PendingRequest> targetRequests = REQUESTS_BY_TARGET.get(targetId);
         if (targetRequests == null) {
             return null;
         }
-
-        UUID matchingRequesterId = null;
-        for (Map.Entry<UUID, PendingRequest> entry : targetRequests.entrySet()) {
-            if (entry.getValue().requesterName().equalsIgnoreCase(requesterName)) {
-                matchingRequesterId = entry.getKey();
-                break;
-            }
-        }
-        if (matchingRequesterId == null) {
-            return null;
-        }
-
-        PendingRequest removed = targetRequests.remove(matchingRequesterId);
+        PendingRequest removed = targetRequests.remove(requesterId);
         if (targetRequests.isEmpty()) {
             REQUESTS_BY_TARGET.remove(targetId);
         }
