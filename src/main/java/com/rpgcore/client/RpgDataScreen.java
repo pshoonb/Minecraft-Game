@@ -164,7 +164,7 @@ public final class RpgDataScreen extends Screen {
                     Component.translatable("screen.rpgcore.effect." + attribute.serializedName()),
                     0xFFB8B0A2, false);
 
-            int[] adjustmentAmounts = {-1, -10, -50, -100, 1, 10, 50, 100};
+            int[] adjustmentAmounts = {1, 10, 50, 100, -1, -10, -50, -100};
             for (int buttonIndex = 0; buttonIndex < adjustmentAmounts.length; buttonIndex++) {
                 int amount = adjustmentAmounts[buttonIndex];
                 int buttonX = buttonLeft + (buttonIndex % 4) * (buttonWidth + buttonGap);

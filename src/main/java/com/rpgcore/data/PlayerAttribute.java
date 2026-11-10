@@ -1,6 +1,6 @@
 package com.rpgcore.data;
 
-/** The eight freely assignable RPG attributes shown by the character panel. */
+/** The nine freely assignable RPG attributes shown by the character panel. */
 public enum PlayerAttribute {
     STRENGTH(0, "strength"),
     DEFENSE(1, "defense"),

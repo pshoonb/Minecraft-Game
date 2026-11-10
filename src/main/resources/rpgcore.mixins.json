@@ -7,10 +7,12 @@
     "LootItemRandomChanceConditionMixin",
     "LootItemRandomChanceWithEnchantedBonusConditionMixin",
     "LootPoolMixin",
-    "WaterBreathingAirSupplyMixin"
+    "WaterBreathingAirSupplyMixin",
+    "PlayerAirMovementSpeedMixin"
   ],
   "client": [
-    "ClientWaterBreathingAirSupplyMixin"
+    "ClientWaterBreathingAirSupplyMixin",
+    "ClientPlayerAirMovementSpeedMixin"
   ],
   "injectors": {
     "defaultRequire": 1
