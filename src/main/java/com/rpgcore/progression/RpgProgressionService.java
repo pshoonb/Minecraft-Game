@@ -66,7 +66,7 @@ public final class RpgProgressionService {
         NetworkHandler.sendSnapshot(player);
     }
 
-    /** Unlocks teleport permanently after reaching level 30 at least once and paying 10,000 points. */
+    /** Unlocks teleport permanently after reaching level 30 at least once and paying 1,000 points. */
     public static void unlockTeleport(ServerPlayer player) {
         syncVanillaLevel(player);
         PlayerRpgData current = player.getData(ModAttachments.PLAYER_RPG_DATA.get());
