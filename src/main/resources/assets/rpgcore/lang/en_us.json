@@ -29,7 +29,7 @@
   "screen.rpgcore.teleport.locked": "TP Locked",
   "screen.rpgcore.teleport.unlocked": "TP Unlocked",
   "screen.rpgcore.teleport.require_level": "You must have reached level 30 at least once to unlock TP.",
-  "screen.rpgcore.teleport.unlock_cost": "Spend 10,000 available attribute points to unlock teleport.",
+  "screen.rpgcore.teleport.unlock_cost": "Spend 10,000 available attribute points to unlock teleport. Currently available: %s.",
   "screen.rpgcore.teleport.need_points": "Requires 10,000 available attribute points; currently available: %s.",
   "screen.rpgcore.teleport.unlocked_tooltip": "Unlocked. Click the TP button in your inventory.",
   "screen.rpgcore.teleport.title": "Teleport to a Player",
