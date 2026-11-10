@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 public final class TeleportRequestManager {
     private static final long REQUEST_TIMEOUT_MILLIS = 60_000L;
     private static final Map<UUID, Map<UUID, PendingRequest>> REQUESTS_BY_TARGET = new HashMap<>();
+    private static long nextRequestSequence;
 
     private TeleportRequestManager() {
     }
@@ -40,7 +41,8 @@ public final class TeleportRequestManager {
             UUID requesterId,
             UUID targetId,
             String requesterName,
-            long expiresAtMillis
+            long expiresAtMillis,
+            long sequence
     ) {
     }
 
@@ -133,7 +135,8 @@ public final class TeleportRequestManager {
                 requester.getUUID(),
                 target.getUUID(),
                 requesterName,
-                System.currentTimeMillis() + REQUEST_TIMEOUT_MILLIS);
+                System.currentTimeMillis() + REQUEST_TIMEOUT_MILLIS,
+                ++nextRequestSequence);
         targetRequests.put(requester.getUUID(), pending);
 
         target.sendSystemMessage(Component.translatable(
@@ -344,7 +347,7 @@ public final class TeleportRequestManager {
             return List.of();
         }
         return requests.values().stream()
-                .sorted(Comparator.comparingLong(PendingRequest::expiresAtMillis).reversed())
+                .sorted(Comparator.comparingLong(PendingRequest::sequence).reversed())
                 .toList();
     }
 
