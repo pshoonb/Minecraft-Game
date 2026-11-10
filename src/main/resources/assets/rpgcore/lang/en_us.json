@@ -48,6 +48,7 @@
   "message.rpgcore.teleport.target_invalid": "That player is offline or invalid. Reopen the list and try again.",
   "message.rpgcore.teleport.success": "Successfully teleported to %s.",
   "message.rpgcore.teleport.request_sent": "Teleport request sent to %s. Waiting for approval.",
+  "message.rpgcore.teleport.request_send_failed": "Teleport request failed: the target player has not unlocked TP.",
   "message.rpgcore.teleport.request_received": "%s wants to teleport to you. Use /accept %s to allow or /deny %s to reject (expires in 60 seconds).",
   "message.rpgcore.teleport.request_already_pending": "You already have a pending teleport request to that player.",
   "message.rpgcore.teleport.no_pending_request": "There is no pending teleport request from %s.",
